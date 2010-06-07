@@ -6,5 +6,5 @@ api_version: 1
 default_expiration: '3650d'
 
 handlers:
-- url: /
+- url: /hotel/(.*)
   script: app/home.py
