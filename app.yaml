@@ -1,0 +1,10 @@
+application: awardr
+version: 1
+runtime: python
+api_version: 1
+
+default_expiration: '3650d'
+
+handlers:
+- url: /
+  script: app/home.py
