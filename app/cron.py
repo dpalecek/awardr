@@ -25,18 +25,18 @@ class FetchProperty(webapp.RequestHandler):
 		if not start_prop_id:
 			start_prop_id = StarwoodPropertyCounter.get_and_increment(LIMIT)
 			
-		if start_prop_id < 200000:
+		if start_prop_id < 300000:
 			task_name = "starwood-property-%d"
 			for prop_id in xrange(start_prop_id, start_prop_id + LIMIT):
 				task = taskqueue.Task(url='/tasks/property', params={'prop_id': prop_id}, \
 										name=task_name % prop_id, method='GET')
 				try:
 					task.add(TASK_QUEUE)
-					self.response.out.write("Added property id %s to task queue '%s'.\n" % (prop_id, TASK_QUEUE))
+					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE))
 				except TaskAlreadyExistsError:
-					self.response.out.write("Task '%s' already exists.\n" % (task.name))
+					self.response.out.write("Task '%s' already exists in task queue '%s'.\n" % (task.name, TASK_QUEUE))
 				except TombstonedTaskError:
-					self.response.out.write("Task '%s' is tombstoned.\n" % (task.name))
+					self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" % (task.name, TASK_QUEUE))
 				
 				#self.response.out.write("Could not add task '%s'.\n" % (task.name))
 		

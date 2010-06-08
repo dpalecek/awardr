@@ -13,6 +13,7 @@
 			table th, table td {
 				padding:				0 30px 5px 0;
 				text-align:				left;
+				vertical-align:			top;
 			}
 		</style>
 	</head>
@@ -31,10 +32,23 @@
 				{% for hotel in hotels %}
 				<tr>
 					<td>{{ forloop.counter }}</td>
-					<td>{{ hotel.id }}</td>
+					<td>
+						<a href="/starwood/{{ hotel.id }}">
+							{{ hotel.id }}</a>
+					</td>
 					<td>{{ hotel.name }}</td>
 					<td>{{ hotel.category }}</td>
-					<td>{{ hotel.country }}</td>
+					<td>
+						{{ hotel.address }}<br />
+						{{ hotel.city }}
+						{% if hotel.state %}{{ hotel.state }}{% endif %}
+						{% if hotel.postal_code %}{{ hotel.postal_code }}{% endif %}<br />
+						{{ hotel.country }}
+						<p>
+							<a href="http://maps.google.com/maps/api/geocode/json?address={{ hotel.encoded_full_address }}&amp;sensor=false">geocoder</a>
+					</td>
+					<td>
+						{{ hotel.last_checked.month }}/{{ hotel.last_checked.day }}/{{ hotel.last_checked.year }}, {{ hotel.last_checked.hour }}:{{ hotel.last_checked.minute }}:{{ hotel.last_checked.second }}</td>
 				</tr>
 				{% endfor %}
 			</tbody>

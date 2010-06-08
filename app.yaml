@@ -8,6 +8,7 @@ default_expiration: '3650d'
 handlers:
 - url: /property/starwood/(.*)
   script: app/parsers.py
+  login: admin
   
 - url: /cron/property
   script: app/cron.py
@@ -19,3 +20,4 @@ handlers:
   
 - url: /(.*)
   script: app/views.py
+  login: admin

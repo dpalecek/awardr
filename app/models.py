@@ -1,5 +1,10 @@
 from google.appengine.ext import db
 from google.appengine.api import memcache
+from google.appengine.api import urlfetch
+
+import urllib
+
+import simplejson
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
@@ -8,26 +13,64 @@ logging.getLogger().setLevel(logging.DEBUG)
 class StarwoodProperty(db.Model):
 	id = db.IntegerProperty(required=True)
 	name = db.StringProperty(required=True)
+	category = db.IntegerProperty(required=True)
+	
 	address = db.StringProperty()
 	city = db.StringProperty()
 	state = db.StringProperty()
-	phone = db.PhoneNumberProperty()
-	fax = db.PhoneNumberProperty()
 	postal_code = db.StringProperty()
 	country = db.StringProperty()
-	category = db.IntegerProperty(required=True)
+	
+	coord = db.GeoPtProperty()
+	
+	phone = db.PhoneNumberProperty()
+	fax = db.PhoneNumberProperty()
+	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
+	
+	def props(self):
+		props = {'id': self.id, 'name': self.name, 'category': self.category,
+					'address': self.address, 'city': self.city, 'state': self.state,
+					'postal_code': self.postal_code, 'country': self.country,
+					'phone': self.phone, 'fax': self.fax}
+		return props
+	
+	def encoded_full_address(self):
+		return self.full_address(encoded=True)
+		
+	def full_address(self, encoded=False):
+		full_address = "%s %s %s %s %s" % (self.address, self.city or "", self.state or "", self.postal_code or "", self.country)
+		if encoded:
+			return urllib.quote_plus(full_address.encode('utf-8'))
+		else:
+			return full_address
+		
+	def geocode(self):
+		coord = None
+		
+		geocoder_url = "http://maps.google.com/maps/api/geocode/json?address=%s&sensor=false" % self.encoded_full_address()
+		try:
+			geocoder_response = urlfetch.fetch(geocoder_url)
+			if geocoder_response and geocoder_response.status_code == 200:
+				geocoded = simplejson.loads(geocoder_response.content)
+				if geocoded['status'] == "OK" and len(geocoded['results']):
+					coord = geocoded['results'][0]['geometry']['location']
+		except:
+			pass
+				
+		if coord:
+			self.coord = coord = db.GeoPt(lat=coord['lat'], lon=coord['lng'])
+			self.save()
+
+		return coord
 	
 	@staticmethod
 	def create(props):
-		logging.info("props: %s" % props)
-		
 		hotel = None
 		if 'id' in props and StarwoodProperty.get_by_id(int(props['id'])) is None:
 			hotel = StarwoodProperty(id=int(props['id']), name=props['name'], category=int(props['category']))
 
 			addr_props = props['address']
-			logging.info("addr_props: %s" % addr_props)
 			if 'address1' in addr_props:
 				hotel.address = addr_props['address1']
 			if 'city' in addr_props:

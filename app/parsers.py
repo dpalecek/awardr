@@ -21,9 +21,9 @@ from google.appengine.api import urlfetch
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
+
+
 starwood_url = 'https://www.starwoodhotels.com/preferredguest/search/ratelist.html'
-
-
 
 class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
@@ -75,7 +75,8 @@ class StarwoodParser(webapp.RequestHandler):
 		hotel_props = {}
 		
 		start_date, departure_date = '2010-06-29', '2010-06-30'
-		starwood_response = urlfetch.fetch('%s?arrivalDate=%s&departureDate=%s&propertyID=%s' % (starwood_url, start_date, departure_date, property_id))
+		starwood_response = urlfetch.fetch(url='%s?arrivalDate=%s&departureDate=%s&propertyID=%s' % (starwood_url, start_date, departure_date, property_id),
+											deadline=10)
 		if starwood_response:
 			soup = BeautifulSoup(starwood_response.content)
 			if soup:
