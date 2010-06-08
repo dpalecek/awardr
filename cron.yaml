@@ -1,0 +1,4 @@
+cron:
+- description: lookup property info job
+  url: /cron/property
+  schedule: every 1 minutes

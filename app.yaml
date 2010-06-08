@@ -6,5 +6,16 @@ api_version: 1
 default_expiration: '3650d'
 
 handlers:
-- url: /hotel/(.*)
-  script: app/home.py
+- url: /property/starwood/(.*)
+  script: app/parsers.py
+  
+- url: /cron/property
+  script: app/cron.py
+  login: admin
+  
+- url: /tasks/(.*)
+  script: app/tasks.py
+  login: admin
+  
+- url: /
+  script: app/views.py

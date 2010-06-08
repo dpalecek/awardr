@@ -1,0 +1,4 @@
+queue:
+- name: starwood-properties
+  rate: 20/s
+  bucket_size: 20
