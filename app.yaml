@@ -17,5 +17,5 @@ handlers:
   script: app/tasks.py
   login: admin
   
-- url: /
+- url: /(.*)
   script: app/views.py

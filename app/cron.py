@@ -6,7 +6,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import urlfetch
 from google.appengine.api.labs import taskqueue
-from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError
+from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodPropertyCounter
@@ -14,7 +14,7 @@ from app.models import StarwoodProperty, StarwoodPropertyCounter
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
-LIMIT = 100
+LIMIT = 200
 TASK_QUEUE = "starwood-properties"
 
 class FetchProperty(webapp.RequestHandler):
@@ -35,8 +35,10 @@ class FetchProperty(webapp.RequestHandler):
 					self.response.out.write("Added property id %s to task queue '%s'.\n" % (prop_id, TASK_QUEUE))
 				except TaskAlreadyExistsError:
 					self.response.out.write("Task '%s' already exists.\n" % (task.name))
+				except TombstonedTaskError:
+					self.response.out.write("Task '%s' is tombstoned.\n" % (task.name))
 				
-				self.response.out.write("Could not add task '%s'.\n" % (task.name))
+				#self.response.out.write("Could not add task '%s'.\n" % (task.name))
 		
 
 def main():

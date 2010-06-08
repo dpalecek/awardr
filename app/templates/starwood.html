@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>Starwood properties</title>
+		
+		<style type="text/css">
+			table {
+				font-family:			monospace;
+				font-size:				14px;
+			}
+			
+			table th, table td {
+				padding:				0 30px 5px 0;
+				text-align:				left;
+			}
+		</style>
+	</head>
+	<body>
+		<table>
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>Id</th>
+					<th>Name</th>
+					<th>Category</th>
+					<th>Country</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for hotel in hotels %}
+				<tr>
+					<td>{{ forloop.counter }}</td>
+					<td>{{ hotel.id }}</td>
+					<td>{{ hotel.name }}</td>
+					<td>{{ hotel.category }}</td>
+					<td>{{ hotel.country }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</body>
+</html>
