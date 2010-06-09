@@ -10,6 +10,16 @@ import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
+CATEGORY_CNP_CHOICES = {
+	1: {'cash': 25,		'points': 1200},
+	2: {'cash': 30,		'points': 1600},
+	3: {'cash': 45,		'points': 4000},
+	4: {'cash': 60,		'points': 4000},
+	5: {'cash': 90,		'points': 4800},
+	6: {'cash': 150,	'points': 8000},
+	#7: {'cash': 90,		'points': 4800},
+}
+
 class StarwoodProperty(db.Model):
 	id = db.IntegerProperty(required=True)
 	name = db.StringProperty(required=True)
@@ -33,6 +43,8 @@ class StarwoodProperty(db.Model):
 					'address': self.address, 'city': self.city, 'state': self.state,
 					'postal_code': self.postal_code, 'country': self.country,
 					'phone': self.phone, 'fax': self.fax}
+		if self.coord:
+			props['coord'] = {'lat': self.coord.lat, 'lng': self.coord.lon}
 		return props
 	
 	def encoded_full_address(self):
@@ -98,7 +110,12 @@ class StarwoodProperty(db.Model):
 			prop = None
 		
 		return prop
-		
+
+
+class StarwoodPropertyDate(db.Model):
+	hotel = db.ReferenceProperty(StarwoodProperty, required=True)
+	date = db.DateProperty(required=True)
+
 
 class StarwoodPropertyCounter(db.Model):
 	count = db.IntegerProperty(required=True)

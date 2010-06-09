@@ -9,8 +9,8 @@ handlers:
 - url: /property/starwood/(.*)
   script: app/parsers.py
   login: admin
-  
-- url: /cron/property
+ 
+- url: /cron/(.*)
   script: app/cron.py
   login: admin
   
@@ -18,6 +18,15 @@ handlers:
   script: app/tasks.py
   login: admin
   
+- url: /services/(.*)
+  script: app/services.py
+
+- url: /bulk/(.*)
+  script: app/bulk.python
+  
+- url: /static
+  static_dir: static
+
 - url: /(.*)
   script: app/views.py
   login: admin

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>{% block head_title %}{% endblock %}</title>
+		
+		<link rel="stylesheet" type="text/css" href="/static/libs/960/reset.css" />
+		<link rel="stylesheet" type="text/css" href="/static/libs/960/960.css" />
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+
+		{% block head_extended %}
+		{% endblock %}
+	</head>
+	<body>
+		<div id="container_16">
+		{% block body_content %}
+		{% endblock %}
+		</div>
+	</body>
+</html>

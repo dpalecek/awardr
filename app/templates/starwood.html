@@ -4,6 +4,8 @@
 	<head>
 		<title>Starwood properties</title>
 		
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+		
 		<style type="text/css">
 			table {
 				font-family:			monospace;
@@ -25,7 +27,9 @@
 					<th>Id</th>
 					<th>Name</th>
 					<th>Category</th>
-					<th>Country</th>
+					<th>Address</th>
+					<th>Coordinates</th>
+					<th>Last checked</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -46,6 +50,9 @@
 						{{ hotel.country }}
 						<p>
 							<a href="http://maps.google.com/maps/api/geocode/json?address={{ hotel.encoded_full_address }}&amp;sensor=false">geocoder</a>
+					</td>
+					<td>
+						{{ hotel.coord }}
 					</td>
 					<td>
 						{{ hotel.last_checked.month }}/{{ hotel.last_checked.day }}/{{ hotel.last_checked.year }}, {{ hotel.last_checked.hour }}:{{ hotel.last_checked.minute }}:{{ hotel.last_checked.second }}</td>

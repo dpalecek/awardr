@@ -1,5 +1,6 @@
 import os
 import wsgiref.handlers
+import random
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -16,6 +17,25 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 LIMIT = 200
 TASK_QUEUE = "starwood-properties"
+
+
+class GeocodeProperty(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		hotels = StarwoodProperty.all().filter('coord =', None).fetch(1000)
+		
+		if hotels and len(hotels):
+			random.shuffle(hotels)
+			hotel = hotels[0]
+		else:
+			hotel = None
+			
+		if hotel:
+			self.response.out.write("%s left.\n" % len(hotels))
+			self.response.out.write("%s %s\n%s => %s" % (hotel.id, hotel.name, hotel.full_address(), hotel.geocode()))
+		else:
+			self.response.out.write("All hotels are geocoded.")
+
 
 class FetchProperty(webapp.RequestHandler):
 	def get(self):
@@ -43,6 +63,7 @@ class FetchProperty(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
+		('/cron/geocode', GeocodeProperty),
 		('/cron/property', FetchProperty)
 	]
 

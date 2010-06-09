@@ -1,4 +1,8 @@
 cron:
 - description: lookup property info job
   url: /cron/property
+  schedule: every 24 hours
+  
+- description: geocode hotels
+  url: /cron/geocode
   schedule: every 1 minutes

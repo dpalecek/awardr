@@ -5,7 +5,6 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
-from google.appengine.api import users
 from google.appengine.api import urlfetch
 
 from app import helper
@@ -17,10 +16,25 @@ import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
+class CreateCoord(webapp.RequestHandler):
+	def get(self):
+		offset = int(self.request.get("offset", 0))
+		self.response.headers['Content-Type'] = 'text/plain'
+		for hotel in StarwoodProperty.all().fetch(100, offset):
+			if hotel.coord:
+				pass
+			else:
+				self.response.out.write("Reset (%s) %s.\n" % (hotel.id, hotel.name))
+				hotel.coord = None
+				hotel.save()
+		
+		
 class Home(webapp.RequestHandler):
 	def get(self):
-		self.response.headers['Content-Type'] = 'text/plain'
-		self.response.out.write("Home")
+		template_values = {}
+		self.response.out.write(template.render(helper.get_template_path("index"),
+								template_values))
+		
 		
 class StarwoodPropertyView(webapp.RequestHandler):
 	def get(self, id):
@@ -66,6 +80,7 @@ class StarwoodPropertiesView(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
+		('/foo', CreateCoord),
 		('/starwood/(.*)', StarwoodPropertyView),
 		('/starwood', StarwoodPropertiesView),
 		('/', Home)
