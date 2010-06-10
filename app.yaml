@@ -21,7 +21,7 @@ handlers:
 - url: /services/(.*)
   script: app/services.py
 
-- url: /bulk/(.*)
+- url: /b/(.*)
   script: app/bulk.python
   
 - url: /static

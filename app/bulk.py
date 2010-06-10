@@ -17,8 +17,9 @@ logging.getLogger().setLevel(logging.DEBUG)
 class DownloadBulk(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'application/json'
-		hotels = [hotel.props() for hotel in StarwoodProperty.all()]
-		self.response.out.write(simplejson.dumps({'hotels': hotels}))
+		self.response.out.write(simplejson.dumps( \
+			{'hotels': [hotel.props() for hotel in StarwoodProperty.all()]}))
+
 
 class UploadBulk(webapp.RequestHandler):
 	def get(self):
@@ -76,16 +77,14 @@ class UploadBulk(webapp.RequestHandler):
 						
 					hotel.put()
 					counter += 1
-			
-		
 		
 		self.response.out.write("Created %s hotels." % counter)
 
 
 def main():
 	ROUTES = [
-		('/bulk/upload', UploadBulk),
-		('/bulk/hotels.json', DownloadBulk)
+		('/b/upload', UploadBulk),
+		('/b/hotels.json', DownloadBulk)
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)

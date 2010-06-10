@@ -40,9 +40,39 @@ class HotelsLookup(webapp.RequestHandler):
 		self.response.out.write(simplejson.dumps({'hotels': [hotel.props() for hotel in hotels]}))
 
 
+class HotelAvailability(webapp.RequestHandler):
+	def get(self, hotel_id):
+		self.response.headers['Content-Type'] = 'application/json'
+		
+		try:
+			hotel_id = int(hotel_id)
+		except:
+			hotel_id = 0
+		
+		start_date = self.request.get('start_date')
+		end_date = self.request.get('end_date')
+		
+		months = {}
+		
+		data_response = urlfetch.fetch("https://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id))
+		if data_response and data_response.status_code == 200:
+			available_dates = simplejson.loads(data_response.content)['data']['availDates']
+			if available_dates:
+				for month in available_dates:
+					month_key = month #frozenset([int(p) for p in month.split('-')])
+					month_data = {}
+					
+					for day in available_dates[month]:
+						month_data[int(day.split('-')[-1])] = [int(key) for key in available_dates[month][day].keys()]
+				
+					months[month_key] = month_data
+					
+		self.response.out.write(simplejson.dumps({'months': months}))
+
 
 def main():
 	ROUTES = [
+		('/services/availability/(.*)/data.json', HotelAvailability),
 		('/services/hotels.json', HotelsLookup)
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)

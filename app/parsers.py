@@ -74,8 +74,8 @@ class StarwoodParser(webapp.RequestHandler):
 		valid_property = False
 		hotel_props = {}
 		
-		start_date, departure_date = '2010-06-29', '2010-06-30'
-		starwood_response = urlfetch.fetch(url='%s?arrivalDate=%s&departureDate=%s&propertyID=%s' % (starwood_url, start_date, departure_date, property_id),
+		arrival_date, departure_date = '2010-06-29', '2010-06-30'
+		starwood_response = urlfetch.fetch(url='%s?arrivalDate=%s&departureDate=%s&propertyID=%s' % (starwood_url, arrival_date, departure_date, property_id),
 											deadline=10)
 		if starwood_response:
 			soup = BeautifulSoup(starwood_response.content)
