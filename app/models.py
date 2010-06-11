@@ -10,14 +10,24 @@ import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
-CATEGORY_CNP_CHOICES = {
-	1: {'cash': 25,		'points': 1200},
-	2: {'cash': 30,		'points': 1600},
-	3: {'cash': 45,		'points': 4000},
-	4: {'cash': 60,		'points': 4000},
-	5: {'cash': 90,		'points': 4800},
-	6: {'cash': 150,	'points': 8000},
-	#7: {'cash': 90,		'points': 4800},
+CATEGORY_AWARD_CHOICES = {
+	'cash_points': {
+		1: {'points': 1200, 'cash': 25,},
+		2: {'points': 1600, 'cash': 30,},
+		3: {'points': 4000, 'cash': 45,},
+		4: {'points': 4000, 'cash': 60,},
+		5: {'points': 4800, 'cash': 90,},
+		6: {'points': 8000, 'cash': 150,},
+	},
+	'points': {
+		1: {'points': 3000},
+		2: {'points': 4000},
+		3: {'points': 7000},
+		4: {'points': 10000},
+		5: {'points': 12000},
+		6: {'points': 20000},
+		7: {'points': 30000},
+	},
 }
 
 class StarwoodProperty(db.Model):

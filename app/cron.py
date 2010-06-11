@@ -13,6 +13,7 @@ from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodPropertyCounter
 
 from lib.BeautifulSoup import BeautifulSoup
+import simplejson
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
@@ -99,8 +100,33 @@ class FetchDirectory(webapp.RequestHandler):
 			self.response.out.write("No new hotels found in category %s." % (category_id))
 	
 
+class CheckAvailability(webapp.RequestHandler):
+	def get(self, hotel_id=None):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		found = False
+		
+		if hotel_id:
+			date = self.request.get('date')
+			year, month, day = [str(int(d)) for d in date.split('-')]
+			days = int(self.request.get('days', 1))
+			
+			hotel_availability_url = 'http://awardr.appspot.com/services/availability/%s/data.json' % (int(hotel_id))
+			hotel_availability_response = urlfetch.fetch(url=hotel_availability_url, deadline=10)
+			if hotel_availability_response and hotel_availability_response.status_code == 200:
+				hotel_availability = simplejson.loads(hotel_availability_response.content)['availability']
+				try:
+					if days in hotel_availability[year][month][day]:
+						found = True
+				except:
+					found = False
+					
+		self.response.out.write("Found? %s" % found)
+		
+
 def main():
 	ROUTES = [
+		('/cron/availability/(.*)', CheckAvailability),
 		('/cron/directory/(.*)', FetchDirectory),
 		('/cron/geocode', GeocodeProperty),
 		('/cron/property', FetchProperty)
