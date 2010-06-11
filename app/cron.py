@@ -12,6 +12,8 @@ from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, Tombston
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodPropertyCounter
 
+from lib.BeautifulSoup import BeautifulSoup
+
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -59,10 +61,47 @@ class FetchProperty(webapp.RequestHandler):
 					self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" % (task.name, TASK_QUEUE))
 				
 				#self.response.out.write("Could not add task '%s'.\n" % (task.name))
+
+
+class FetchDirectory(webapp.RequestHandler):
+	def get(self, category_id=1):
+		def is_valid_property(d):
+			return d['class'].find('newProperty') == -1 and info_div.find('a', 'propertyName') is not None
 		
+		self.response.headers['Content-Type'] = 'text/plain'
+	
+		directory_ids = []
+	
+		directory_url = "https://www.starwoodhotels.com/corporate/directory/hotels/all/list.html?categoryFilter=%s" % int(category_id)
+		directory_response = urlfetch.fetch(url=directory_url, deadline=10)
+		
+		if directory_response and directory_response.status_code == 200:
+			soup = BeautifulSoup(directory_response.content)
+			for link in [info_div.find('a', 'propertyName') for info_div in soup.findAll('div', 'propertyInfo') if is_valid_property(info_div)]:
+				directory_ids.append(int(link['href'].split('propertyID=')[1])) #a['href'].split('?')[1].split('&')
+		
+		diff_ids = list(frozenset(directory_ids) - frozenset([hotel.id for hotel in StarwoodProperty.all()]))
+		diff_ids.sort()
+
+		if diff_ids and len(diff_ids):		
+			task_name = "starwood-property-%d"
+			for prop_id in diff_ids:
+				task = taskqueue.Task(url='/tasks/property', params={'prop_id': prop_id}, \
+										name=task_name % prop_id, method='GET')
+				try:
+					task.add(TASK_QUEUE)
+					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE))
+				except TaskAlreadyExistsError:
+					self.response.out.write("Task '%s' already exists in task queue '%s'.\n" % (task.name, TASK_QUEUE))
+				except TombstonedTaskError:
+					self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" % (task.name, TASK_QUEUE))
+		else:
+			self.response.out.write("No new hotels found in category %s." % (category_id))
+	
 
 def main():
 	ROUTES = [
+		('/cron/directory/(.*)', FetchDirectory),
 		('/cron/geocode', GeocodeProperty),
 		('/cron/property', FetchProperty)
 	]

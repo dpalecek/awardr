@@ -52,22 +52,24 @@ class HotelAvailability(webapp.RequestHandler):
 		start_date = self.request.get('start_date')
 		end_date = self.request.get('end_date')
 		
-		months = {}
+		availability = {}
 		
 		data_response = urlfetch.fetch("https://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id))
 		if data_response and data_response.status_code == 200:
 			available_dates = simplejson.loads(data_response.content)['data']['availDates']
 			if available_dates:
-				for month in available_dates:
-					month_key = month #frozenset([int(p) for p in month.split('-')])
+				for year_month_key in available_dates:
+					year, month = [int(p) for p in year_month_key.split('-')]
+					if not year in availability:
+						availability[year] = {}
+
 					month_data = {}
-					
-					for day in available_dates[month]:
-						month_data[int(day.split('-')[-1])] = [int(key) for key in available_dates[month][day].keys()]
+					for day in available_dates[year_month_key]:
+						month_data[int(day.split('-')[-1])] = [int(key) for key in available_dates[year_month_key][day].keys()]
 				
-					months[month_key] = month_data
+					availability[year][month] = month_data
 					
-		self.response.out.write(simplejson.dumps({'months': months}))
+		self.response.out.write(simplejson.dumps({'availability': availability}))
 
 
 def main():
