@@ -122,9 +122,12 @@ class StarwoodProperty(db.Model):
 		return prop
 
 
-class StarwoodPropertyDate(db.Model):
+class StarwoodPropertyDateAvailability(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)
 	date = db.DateProperty(required=True)
+	nights = db.ListProperty(long)
+	
+	last_checked = db.DateTimeProperty(required=True, auto_now=True)
 
 
 class StarwoodPropertyCounter(db.Model):

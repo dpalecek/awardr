@@ -1,17 +1,11 @@
-import os
-import wsgiref.handlers
-
 from google.appengine.ext import db
 from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import urlfetch
+from google.appengine.ext.webapp.util import run_wsgi_app
 
 from app.models import StarwoodProperty
 
 import simplejson
-
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 class DownloadBulk(webapp.RequestHandler):
@@ -74,6 +68,10 @@ class UploadBulk(webapp.RequestHandler):
 						hotel.fax = hotel_data['fax']
 					except:
 						pass
+					try:
+						hotel.coord = db.GeoPt(lat=hotel_data['coord']['lat'], lon=hotel_data['coord']['lng'])
+					except:
+						pass
 						
 					hotel.put()
 					counter += 1
@@ -83,8 +81,8 @@ class UploadBulk(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
-		('/b/upload', UploadBulk),
-		('/b/hotels.json', DownloadBulk)
+		('/bulk/upload', UploadBulk),
+		('/bulk/hotels.json', DownloadBulk),
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)

@@ -1,18 +1,9 @@
-var hotels_map = null;
-
 $(document).ready(
 	function() {
-		hotels_map = new google.maps.Map(document.getElementById("map_canvas"), {
-			zoom: 8,
-			center: new google.maps.LatLng(-34.397, 150.644),
-			mapTypeId: google.maps.MapTypeId.ROADMAP
-		});
-		
+		var hotels_map = null;
 		var hotel_markers = [];
 		
-		google.maps.event.addListener(hotels_map, 'dragend', function() {
-			console.log('dragend');
-			
+		var populate_map = function() {
 			$.each(hotel_markers, function(i) {
 				var hotel_marker = this;
 				hotel_marker.setMap(null);
@@ -40,6 +31,26 @@ $(document).ready(
 					});
 				}
 			);
+		}
+		
+		hotels_map = new google.maps.Map(document.getElementById("map_canvas"), {
+			zoom: 6,
+			center: new google.maps.LatLng(-34.397, 150.644),
+			mapTypeId: google.maps.MapTypeId.ROADMAP,
+			navigationControl: true,
+			mapTypeControl: false,
+			scaleControl: true,
+			scrollwheel: false
+		});
+		
+		/*
+		google.maps.event.addListener(hotels_map, 'tilesloaded', function() {
+			populate_map();
+		});
+		*/
+		
+		google.maps.event.addListener(hotels_map, 'dragend', function() {
+			populate_map();
 		});
 	}
 );

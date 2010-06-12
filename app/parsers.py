@@ -10,7 +10,7 @@ from google.appengine.api import urlfetch
 
 import app.helper as helper
 
-#import simplejson
+import simplejson
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 
 #from templatefilters import *
@@ -26,6 +26,30 @@ logging.getLogger().setLevel(logging.DEBUG)
 starwood_url = 'https://www.starwoodhotels.com/preferredguest/search/ratelist.html'
 
 class StarwoodParser(webapp.RequestHandler):
+	@staticmethod
+	def parse_availability(hotel_id, start_date, end_date):
+		availability = {}
+		url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s" % (start_date, end_date, hotel_id)
+		data_response = urlfetch.fetch(url=url, #"http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id),
+										deadline=10)
+		if data_response and data_response.status_code == 200:
+			available_dates = simplejson.loads(data_response.content)['data']['availDates']
+			if available_dates:
+				for year_month_key in available_dates:
+					year, month = [int(p) for p in year_month_key.split('-')]
+					if not year in availability:
+						availability[year] = {}
+
+					month_data = {}
+					for day in available_dates[year_month_key]:
+						month_data[int(day.split('-')[-1])] = [int(key) for key in available_dates[year_month_key][day].keys()]
+				
+					availability[year][month] = month_data
+		
+		return availability
+		
+		
+	
 	@staticmethod
 	def parse_starwood(soup):
 		def parse_points(soup):

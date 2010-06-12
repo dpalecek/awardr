@@ -1,16 +1,17 @@
-import os
-import wsgiref.handlers
+import datetime
 import random
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
+from google.appengine.api import users
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import urlfetch
 from google.appengine.api.labs import taskqueue
+from google.appengine.api import mail
 from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
-from app.models import StarwoodProperty, StarwoodPropertyCounter
+from app.models import StarwoodProperty, StarwoodPropertyCounter, StarwoodPropertyDateAvailability
 
 from lib.BeautifulSoup import BeautifulSoup
 import simplejson
@@ -18,9 +19,11 @@ import simplejson
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
+
+
 LIMIT = 200
 TASK_QUEUE = "starwood-properties"
-
+DATE_PATTERN = "%02d-%02d"
 
 class GeocodeProperty(webapp.RequestHandler):
 	def get(self):
@@ -100,9 +103,11 @@ class FetchDirectory(webapp.RequestHandler):
 			self.response.out.write("No new hotels found in category %s." % (category_id))
 	
 
-class CheckAvailability(webapp.RequestHandler):
+class CheckHotelAvailability(webapp.RequestHandler):
 	def get(self, hotel_id=None):
 		self.response.headers['Content-Type'] = 'text/plain'
+		
+		user = users.get_current_user()
 		
 		found = False
 		
@@ -121,12 +126,67 @@ class CheckAvailability(webapp.RequestHandler):
 				except:
 					found = False
 					
-		self.response.out.write("Found? %s" % found)
+		self.response.out.write("Found? %s\n" % found)
+		
+		if user:
+			self.response.out.write('user-email: %s\n' % user.email())
+			mail.send_mail(sender="mshafrir@gmail.com", to=user.email(),
+							subject="Found?", body="%s" % found)
+
+
+class FetchHotelAvailability(webapp.RequestHandler):
+	def get(self):
+		months_delta = int(self.request.get('months', 1))
+		
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		hotel = StarwoodProperty.all().order('last_checked').get()
+		if not hotel:
+			self.response.out.write("Did not get a hotel.\n")
+			
+		else:
+			self.response.out.write("Got hotel %s [%s].\n" % (hotel.name, hotel.id))
+			
+			today = datetime.date.today()
+			start_date = DATE_PATTERN % (today.year, today.month)
+			end_year = today.year + (today.month + months_delta) / 13
+			end_month = (today.month + months_delta)
+			if end_month > 12:
+				end_month = end_month % 12
+			end_date = DATE_PATTERN % (end_year, end_month)
+			self.response.out.write("Getting date range %s to %s, inclusive.\n" % (start_date, end_date))
+			
+			avail_data = StarwoodParser.parse_availability(hotel.id, start_date, end_date)
+			if avail_data and len(avail_data):
+				avail_map = {}
+				for year in avail_data:
+					for month in avail_data[year]:
+						for day in avail_data[year][month]:
+							nights = avail_data[year][month][day]						
+							if nights and len(nights):
+								avail_map[(int(year), int(month), int(day))] = nights
+
+				current_hotel_avail = StarwoodPropertyDateAvailability.all().filter('hotel=', hotel)
+				if current_hotel_avail and current_hotel_avail.count():
+					db.delete(current_hotel_avail)
+				self.response.out.write("Deleted all existing StarwoodPropertyDateAvailability for this hotel.\n")
+
+				for date in avail_map:
+					a = StarwoodPropertyDateAvailability(hotel=hotel, \
+														date=datetime.date(date[0], date[1], date[2]), \
+														nights=avail_map[date])
+					a.put()
+					
+				self.response.out.write("Created %s StarwoodPropertyDateAvailability records.\n" % (len(avail_map)))
+						
+			hotel.save()
+				
 		
 
 def main():
 	ROUTES = [
-		('/cron/availability/(.*)', CheckAvailability),
+		('/cron/availability/(.*)', CheckHotelAvailability),
+		('/cron/availability', FetchHotelAvailability),
 		('/cron/directory/(.*)', FetchDirectory),
 		('/cron/geocode', GeocodeProperty),
 		('/cron/property', FetchProperty)
