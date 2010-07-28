@@ -13,8 +13,9 @@
 # If you have module(s) with your model classes, add them here. Also
 # change the kind properties to model_class.
 python_preamble:
-- import: base64
 - import: re
+- import: base64
+- import: google.appengine.ext.db
 - import: google.appengine.ext.bulkload.transform
 - import: google.appengine.ext.bulkload.bulkloader_wizard
 - import: google.appengine.api.datastore
@@ -39,8 +40,9 @@ transformers:
       external_name: city
       # Type: String Stats: 1021 properties of this type in this kind.
 
-      #- property: coord
-      #external_name: coord
+    - property: coord
+      external_name: coord
+      import_transform: transform.none_if_empty(db.GeoPt)
       # Type: GeoPt Stats: 925 properties of this type in this kind.
 
     - property: country

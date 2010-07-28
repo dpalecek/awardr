@@ -1,4 +1,7 @@
 import os
+import urllib
+import random
+import datetime
 import wsgiref.handlers
 
 from google.appengine.ext import db
@@ -27,12 +30,66 @@ class CreateCoord(webapp.RequestHandler):
 				self.response.out.write("Reset (%s) %s.\n" % (hotel.id, hotel.name))
 				hotel.coord = None
 				hotel.save()
-		
-		
-class Home(webapp.RequestHandler):
+
+
+def geocoder_service(address):
+	url = "http://maps.google.com/maps/api/geocode/json?address=%s&sensor=%s" \
+			% (urllib.quote_plus(address), "true")
+	response = urlfetch.fetch(url)
+	if response.status_code == 200:
+		try:
+			return simplejson.loads(response.content)['results'][0]['geometry']['location']
+		except:
+			pass
+
+	return None
+
+class SearchView(webapp.RequestHandler):
 	def get(self):
-		template_values = {}
-		self.response.out.write(template.render(helper.get_template_path("index"),
+		where = self.request.get('where')
+		loc = geocoder_service(where)
+		
+		try:
+			nights = int(self.request.get('nights', 1))
+		except:
+			nights = 1
+		nights = max(min(nights, 5), 1)
+		
+		today = datetime.date.today()
+		
+		try:
+			day = int(self.request.get('day', today.day))
+		except:
+			day = today.day
+		
+		try:
+			month = int(self.request.get('month', today.month))
+		except:
+			month = today.month
+		month = max(min(month, 12), 1)
+			
+		try:
+			year = int(self.request.get('year', today.year))
+		except:
+			year = today.year
+		year = max(min(year, today.year + 2), today.year)
+		
+		template_values = {'where': where, 'year': year, 'month': month, 'day': day, 'nights': nights, \
+							'loc': loc}
+		self.response.out.write(template.render(helper.get_template_path("search"),
+								template_values))
+		
+		
+		
+class LandingView(webapp.RequestHandler):
+	def get(self):
+		DAYS = xrange(1,32)
+		MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
+		all_hotels = StarwoodProperty.all().fetch(2000)
+		random.shuffle(all_hotels)
+		
+		template_values = {'days': DAYS, 'months': MONTHS, 'hotels': all_hotels,}
+		self.response.out.write(template.render(helper.get_template_path("landing"),
 								template_values))
 		
 		
@@ -80,10 +137,11 @@ class StarwoodPropertiesView(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
+		('/search', SearchView),
 		('/foo', CreateCoord),
 		('/starwood/(.*)', StarwoodPropertyView),
 		('/starwood', StarwoodPropertiesView),
-		('/', Home)
+		('/', LandingView),
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)

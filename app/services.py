@@ -41,9 +41,11 @@ class HotelsLookup(webapp.RequestHandler):
 			ne = {'lat': float(self.request.get('e')), 'lng': float(self.request.get('n'))}
 		except:
 			ne = None
+			
+		logging.info("sw: %s, ne: %s" % (sw, ne))
 		
 		hotels = memcache.get('hotels')
-		if not hotels:
+		if not hotels or not len(hotels):
 			hotels = [hotel for hotel in StarwoodProperty.all().filter('coord !=', None)]
 			memcache.set('hotels', hotels)
 		

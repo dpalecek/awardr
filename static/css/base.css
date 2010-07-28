@@ -1,0 +1,85 @@
+body {
+	font:						normal normal normal 62.5%/1.5 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Verdana, Arial, Helvetica, sans-serif;
+}
+
+#header_wrapper {
+	background:					#BFDBEF;
+	padding:					6px 0;
+}
+
+h1 {
+	font-weight:				normal;
+	font-size:					16px;
+	color:						#0d0d0d;
+}
+
+h1 a {
+	color:						#0d0d0d;
+	text-decoration:			none;
+}
+
+#body_wrapper {
+	margin:						10px 0;
+}
+
+body div {
+	font-size:					12px;
+}
+
+.bold {
+	font-weight:				bold;
+}
+
+
+
+input.button3d {
+	display: block;
+	width: 130px;
+	margin: 0 auto;
+	line-height: 18px;
+	padding: 4px 15px 6px;
+	text-align: center;
+	font-weight: bold;
+	color: #fff !important;
+	text-shadow: #6ece00 0 -1px 0;
+	border: 1px solid #92ef0d;
+	-webkit-border-radius: 15px;
+	-moz-border-radius: 15px;
+	border-radius: 15px;
+	min-width: 40px;
+	-webkit-box-shadow: rgba(0, 0, 0, .1) 0 1px 0;
+	-moz-box-shadow: rgba(0, 0, 0, .1) 0 1px 0;
+	background: #92ef0d;
+	background: -webkit-gradient(linear, left top, left bottom, from(#c0ef39), to(#c0ef39));
+	background: -moz-linear-gradient(top,  #c0ef39,  #c0ef39);
+	-webkit-transition: -webkit-box-shadow 0.2s linear;
+}
+
+input.button3d:hover {
+	cursor:				pointer;
+}
+
+input.button3d:hover,
+input.button3d:focus {
+    border-color: #6ece00;
+    text-decoration: none;
+    -webkit-box-shadow: #c0ef39 0 0 5px;
+    -moz-box-shadow: #c0ef39 0 0 5px;
+}
+
+input.button3d:active {
+    text-shadow: #5ab500 0 -1px 0;
+    background: #6ede00;
+    background: -webkit-gradient(linear, left top, left bottom, from(#92ef0d), to(#6ece00));
+    background: -moz-linear-gradient(top,  #92ef0d,  #6ece00);
+}
+
+html form input.button3d {
+    font-size: 14px;
+    line-height: 20px;
+    padding: 8px 24px 10px;
+    -webkit-border-radius: 30px;
+    -moz-border-radius: 30px;
+    border-radius: 30px;
+    font-weight: normal;
+}

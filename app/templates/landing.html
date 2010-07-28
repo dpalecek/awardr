@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block head_extended %}
+		<link rel="stylesheet" type="text/css" href="/static/css/landing.css" />
+{% endblock %}
+
+{% block body_content %}
+			<div class="prefix_1 grid_14 suffix_1">
+				<p id="intro">Have Starwood points burning a hole in your pocket?  Find the best hotels and resorts all over the world to use them, such as the <span class="bold">{{ hotels.0.name }}</span> in
+					{% ifequal hotels.0.country "United States" %}
+					{{ hotels.0.city }}, {{ hotels.0.state }}.
+					{% else %}
+					{{ hotels.0.city }}, {{ hotels.0.country }}.
+					{% endifequal %}
+				</p>
+			</div>
+			<div class="clear"></div>
+			
+			<form action="/search" method="get" id="landing_form">
+				<div class="field_container">
+					<div class="prefix_2 grid_5">
+						<label for="field_where">Where?</label>
+					</div>
+					<div class="grid_6 suffix_3">
+						<input type="text" name="where" id="field_where"
+						 	class="field" />
+						<p class="example">(e.g. France, 10001, Los Angeles, CA)</p>
+					</div>
+					<div class="clear"></div>
+				</div>
+				
+				<div class="field_container">
+					<div class="prefix_2 grid_5">
+						<label for="field_month">When?</label>
+					</div>
+					<div class="grid_6 suffix_3">
+						{% comment %}
+						<input type="text" name="when" id="field_when"
+							value="12/25/2000" maxlength="10"
+							class="field" />
+						{% endcomment %}
+						
+						<select type="select" name="month" id="field_month" class="field">
+							{% for month in months %}
+							<option value="{{ forloop.counter }}">{{ month }}</option>
+							{% endfor %}
+						</select>
+						
+						<select type="select" name="day" id="field_day" class="field">
+							{% for day in days %}
+							<option value="{{ day }}">{{ day }}</option>
+							{% endfor %}
+						</select>
+						
+						<select type="select" name="year" id="field_year" class="field">
+							<option value="2010">2010</option>
+							<option value="2011">2011</option>
+							<option value="2012">2012</option>
+						</select>
+					</div>
+					<div class="clear"></div>
+				</div>
+				
+				<div class="field_container">
+					<div class="prefix_2 grid_5">
+						<label for="field_nights">How many nights?</label>
+					</div>
+					<div class="grid_6 suffix_3">
+						<select name="nights" id="field_nights" class="field">
+							<option value="1">1</option>
+							<option value="2">2</option>
+							<option value="3">3</option>
+							<option value="4">4</option>
+							<option value="5">5</option>
+						</select>
+					</div>
+					<div class="clear"></div>
+				</div>
+				
+				<div class="grid_16">
+					<input type="submit" value="Search" id="landing_form_submit"
+					 		class="button3d"/>
+				</div>
+			</form>
+{% endblock %}

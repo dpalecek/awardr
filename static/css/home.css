@@ -1,4 +1,9 @@
+body {
+	font:					13px/1.5 "myriad pro",helvetica,arial,sans-serif;
+	font-family:			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
+}
+
 #map_canvas {
-	height:				300px;
-	width:				300px;
+	height:					400px;
+	width:					100%;
 }

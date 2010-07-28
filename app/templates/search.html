@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block head_extended %}
+		<link rel="stylesheet" type="text/css" href="/static/css/search.css" />
+
+		<script>
+			var user_coord = {'lat': {{ loc.lat }}, 'lng': {{ loc.lng }}};
+		</script>
+		<script src="http://www.google.com/jsapi?key=ABQIAAAAbS93tJ_uidHDZWvF7euCFBRZY0UO5Ce9jhJtaWkDUN0I_qaxZRSYddpKWN0rTK8azJFokggtQdZ7FQ"></script>
+		<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+		<script src="/static/js/search.js"></script>
+{% endblock %}
+
+{% block body_content %}
+			<div class="grid_16">
+				<p>{{ year }} - {{ month }} - {{ day }}</p>
+				<p>{{ where }}</p>
+				<p>{{ nights }}</p>
+				<p>{{ loc }}</p>
+			</div>
+			<div class="clear"></div>
+			
+			<div id="" style="border-top: 1px solid black; border-bottom: 1px solid black;">
+				<div class="grid_9">
+					list goes here
+				</div>
+				<div class="grid_7">
+					<div id="hotels_map"></div>
+				</div>
+				<div class="clear"></div>
+			</div>
+{% endblock %}

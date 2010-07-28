@@ -1,20 +1,46 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 	<head>
-		<title>{% block head_title %}{% endblock %}</title>
+		<title>{% block head_title %}awardpad - make the most of your starwood cash &amp; points{% endblock %}</title>
 		
 		<link rel="stylesheet" type="text/css" href="/static/libs/960/reset.css" />
 		<link rel="stylesheet" type="text/css" href="/static/libs/960/960.css" />
+		
+		<link rel="stylesheet" type="text/css" href="/static/css/base.css" />
+		
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js"></script>
 
 		{% block head_extended %}
 		{% endblock %}
 	</head>
 	<body>
-		<div id="container_16">
-		{% block body_content %}
-		{% endblock %}
+		<div id="header_wrapper">
+			<div class="container_16">
+				<div class="grid_16" id="header">
+					<h1>
+						<a href="/" class="bold">awardpad</a> - make the most of your starwood points
+					</h1>
+				</div>
+				<div class="clear"></div>
+			</div>
+		</div>
+		
+		<div id="body_wrapper">
+			<div class="container_16">
+			{% block body_content %}
+			{% endblock %}
+			</div>
+		</div>
+		
+		<div id="footer_wrapper">
+			<div class="container_16">
+				<div class="grid_16">
+					Copyright 2010
+				</div>
+				<div class="clear"></div>
+			</div>
 		</div>
 	</body>
 </html>

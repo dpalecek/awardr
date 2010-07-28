@@ -1,0 +1,52 @@
+p#intro {
+	text-align:				center;
+	font-size:				14px;
+	margin:					10px 0 20px;
+	color:					#444;
+}
+
+form#landing_form label {
+	display:				block;
+	font-size:				16px;
+	text-align:				right;
+}
+
+form#landing_form .field_container {
+	margin:					8px 0 16px;
+}
+
+form#landing_form .field {
+	font-size:				16px;
+}
+
+form#landing_form #field_where {
+	width:					240px;
+	display:				inline-block;
+	margin:					0 auto 0 0;
+	text-align:				left;
+}
+
+form#landing_form #field_when {
+	width:					100px;
+	display:				block;
+	margin:					0 auto 0 0;
+	text-align:				left;
+}
+
+form#landing_form select#field_nights {
+}
+
+form#landing_form input.field {
+	padding:				4px;
+}
+
+form#landing_form select#field_nights {
+	width:					60px;
+	padding:				4px;
+}
+
+form#landing_form input#landing_form_submit {
+	font-size:				22px;
+	margin:					10px auto;
+	display:				block;
+}

@@ -1,13 +1,20 @@
 {% extends "base.html" %}
 
 {% block head_extended %}
+		<script src="http://www.google.com/jsapi?key=ABQIAAAAbS93tJ_uidHDZWvF7euCFBRZY0UO5Ce9jhJtaWkDUN0I_qaxZRSYddpKWN0rTK8azJFokggtQdZ7FQ"></script>
 		<link rel="stylesheet" type="text/css" href="/static/css/home.css" />
 		<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
 		<script src="/static/js/home.js"></script>
 {% endblock %}
 
 {% block body_content %}
-			<div class="prefix_4 grid_8 suffix_4">
+			<div class="grid_8">
+				Found hotels.
+				<ul id="hotel_results_list">
+					<li>Not found.</li>
+				</ul>
+			</div>
+			<div class="grid_8">
 				<div id="map_canvas"></div>
 				<p id="info"></p>
 			</div>

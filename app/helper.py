@@ -27,3 +27,7 @@ def get_template_path(template_name, extension=None):
 		extension = "html"
 
 	return os.path.join(os.path.dirname(__file__), "templates/%s.%s" % (template_name, extension))
+	
+	
+def closest_hotels(coord):
+	StarwoodProperty.all()
