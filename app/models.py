@@ -3,6 +3,7 @@ from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 
 import urllib
+import random
 
 import simplejson
 
@@ -29,6 +30,7 @@ CATEGORY_AWARD_CHOICES = {
 		7: {'points': 30000},
 	},
 }
+
 
 class StarwoodProperty(db.Model):
 	id = db.IntegerProperty(required=True)
@@ -115,12 +117,25 @@ class StarwoodProperty(db.Model):
 	@staticmethod
 	def get_by_id(id=None):
 		if id:
-		 	prop = StarwoodProperty.all().filter('id =', id).get()
+		 	hotel = StarwoodProperty.all().filter('id =', id).get()
 		else:
-			prop = None
+			hotel = None
 		
-		return prop
+		return hotel
 
+	@staticmethod
+	def get_by_prop(prop=None, value=None):
+		if prop and value:
+			hotel = StarwoodProperty.all().filter('%s =' % (prop), value).get()
+		else:
+			hotel = None
+
+		return hotel
+
+	@staticmethod
+	def random():
+		hotel = random.choice(StarwoodProperty.all().fetch(2000))
+		return hotel
 
 class StarwoodPropertyDateAvailability(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)

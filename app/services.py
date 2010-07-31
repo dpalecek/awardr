@@ -55,6 +55,31 @@ class HotelsLookup(webapp.RequestHandler):
 		self.response.out.write(simplejson.dumps({'hotels': [hotel.props() for hotel in hotels]}))
 
 
+AUTOCOMPLETE_LIMIT = 10
+class HotelsAutocomplete(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'application/json'
+		matched_hotels = []
+		
+		query = self.request.get('term', default_value='').strip().lower()
+		if query and len(query):
+			hotels = memcache.get('hotels')
+			if not hotels:
+				hotels = StarwoodProperty.all()
+				memcache.set('hotels', hotels)
+				
+			matched_count = 0
+			for hotel in hotels.fetch(2000):
+				if hotel.name.lower().find(query) != -1 or hotel.city.lower().find(query) != -1 \
+								or hotel.country.lower().find(query) != -1 or str(hotel.id).find(query):
+					matched_hotels.append(hotel.props())
+					matched_count += 1
+					if matched_count >= AUTOCOMPLETE_LIMIT:
+						break
+						
+		self.response.out.write(simplejson.dumps(matched_hotels))
+		
+
 class HotelAvailability(webapp.RequestHandler):
 	def get(self, hotel_id):
 		self.response.headers['Content-Type'] = 'application/json'
@@ -67,16 +92,17 @@ class HotelAvailability(webapp.RequestHandler):
 		start_date = self.request.get('start_date')
 		end_date = self.request.get('end_date')
 		
-		availability = StarwoodParser.parse_availability(hotel_id, start_date, end_date)
+		availability = StarwoodParser.parse_availability(hotel_id, start_date, end_date)['availability']
 					
 		self.response.out.write(simplejson.dumps({'availability': availability}))
 
 
 def main():
 	ROUTES = [
+		('/services/autocomplete/hotels.json', HotelsAutocomplete),
 		('/services/availability/(.*)/data.json', HotelAvailability),
 		('/services/hotels.json', HotelsLookup),
-		('/services/hotels_all.json', AllHotels)
+		('/services/hotels_all.json', AllHotels),
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)

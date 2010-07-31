@@ -1,5 +1,6 @@
 import os
 import wsgiref.handlers
+import datetime
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -13,11 +14,6 @@ import app.helper as helper
 import simplejson
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 
-#from templatefilters import *
-#webapp.template.register_template_library('templatefilters')
-
-from google.appengine.api import urlfetch
-
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -27,13 +23,22 @@ starwood_url = 'https://www.starwoodhotels.com/preferredguest/search/ratelist.ht
 
 class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
-	def parse_availability(hotel_id, start_date, end_date):
+	def parse_availability(hotel_id, start_date, end_date, ratecode='SPGCP'):
+		'''
+		?start=2010-06&end=2010-07&hotel_id=1021&ratecode=BAR1
+		'''
+		
 		availability = {}
-		url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s" % (start_date, end_date, hotel_id)
-		data_response = urlfetch.fetch(url=url, #"http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id),
+		
+		url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s" \
+					% (start_date, end_date, hotel_id, ratecode)
+		response = urlfetch.fetch(url=url, #"http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id),
 										deadline=10)
-		if data_response and data_response.status_code == 200:
-			available_dates = simplejson.loads(data_response.content)['data']['availDates']
+		if response and response.status_code == 200:
+			availability_data = simplejson.loads(response.content)['data']
+			currency_code = availability_data['currencyCode']
+			
+			available_dates = availability_data['availDates']
 			if available_dates:
 				for year_month_key in available_dates:
 					year, month = [int(p) for p in year_month_key.split('-')]
@@ -41,12 +46,19 @@ class StarwoodParser(webapp.RequestHandler):
 						availability[year] = {}
 
 					month_data = {}
-					for day in available_dates[year_month_key]:
-						month_data[int(day.split('-')[-1])] = [int(key) for key in available_dates[year_month_key][day].keys()]
+					for year_month_day_key in available_dates[year_month_key]:
+						day_data = available_dates[year_month_key][year_month_day_key]
+						day_key = int(year_month_day_key.split('-')[-1])
+						month_data[day_key] = {}
+						for rate in [{int(key): day_data[key]} for key in day_data.keys()]:
+							month_data[day_key].update(rate)
 				
 					availability[year][month] = month_data
-		
-		return availability
+					
+		else:
+			currency_code = None
+	
+		return {'currency_code': currency_code, 'availability': availability}
 		
 		
 	
@@ -94,11 +106,16 @@ class StarwoodParser(webapp.RequestHandler):
 	
 	
 	@staticmethod
-	def parse(property_id):
+	def parse(property_id, ratecode='SPGCP'):
 		valid_property = False
 		hotel_props = {}
 		
-		arrival_date, departure_date = '2010-06-29', '2010-06-30'
+		today = datetime.date.today()
+		tomorrow = today + datetime.timedelta(days=1)
+		date_format = "%s-%02d-%02d"
+		
+		arrival_date = date_format % (today.year, today.month, today.day)
+		departure_date = date_format % (tomorrow.year, tomorrow.month, tomorrow.day)
 		starwood_response = urlfetch.fetch(url='%s?arrivalDate=%s&departureDate=%s&propertyID=%s' % (starwood_url, arrival_date, departure_date, property_id),
 											deadline=10)
 		if starwood_response:
@@ -126,8 +143,9 @@ class StarwoodParser(webapp.RequestHandler):
 	def get(self, property_id=None):
 		self.response.headers['Content-Type'] = 'text/plain'
 		
-		hotel_props = StarwoodParser.parse(property_id)
-
+		ratecode = self.request.get('ratecode', default_value='SPGCP')
+		
+		hotel_props = StarwoodParser.parse(property_id, ratecode)
 		if hotel_props:
 			self.response.out.write("%s" % hotel_props)
 		if not hotel_props:
@@ -138,7 +156,7 @@ class StarwoodParser(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
-		('/property/starwood/(.*)', StarwoodParser)
+		('/property/starwood/(.*)', StarwoodParser),
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)

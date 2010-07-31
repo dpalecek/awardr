@@ -1,0 +1,53 @@
+#result_container {
+	margin: 20px 0;
+}
+
+#result_container #result_message {
+	text-align: center;
+}
+
+html body div#result_container p#result_message span#the_rate {
+	font-size: 20px;
+	font-weight: bold;
+	display: inline-block;
+	background: #FAFBB5;
+	padding: 2px 8px;
+}
+
+.field_container {
+	margin-bottom: 8px;
+}
+
+label {
+	display: block;
+	text-align: right;
+}
+
+input.field {
+	font-family: monospace;
+	font-size: 12px; 
+}
+
+input.submit {
+	margin: 0 0 0 0;
+	display: inline-block;
+	width: 100px;
+}
+
+ul.ui-autocomplete {
+	width: 100px;
+}
+
+ul.ui-autocomplete li:hover {
+	cursor: pointer;
+}
+
+p#ratecode_examples {
+	font-size: 9px;
+	color: #666;
+}
+
+p#ratecode_examples span.ratecode_example:hover {
+	cursor: pointer;
+	text-decoration: underline;
+}

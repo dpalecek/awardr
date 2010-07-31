@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block head_extended %}
+		<link rel="stylesheet" type="text/css" href="/static/css/landing.css" />
+		<link rel="stylesheet" type="text/css" href="/static/css/ratelookup.css" />
+		
+		<link rel="stylesheet" type="text/css" href="/static/libs/jquery-ui-1.8.2/css/redmond/jquery-ui-1.8.2.custom.css">
+		
+		<script src="/static/js/ratelookup.js"></script>
+{% endblock %}
+
+{% block body_content %}
+			<form id="form_ratecode" method="post" action="">
+				<div class="field_container">
+					<div class="prefix_2 grid_4">
+						<label for="field_ratecode">
+							Rate Code
+						</label>
+					</div>
+					<div class="grid_6 suffix_4">
+						<input type="text" maxlength="10" name="ratecode" id="field_ratecode"
+							style="width: 72px;" class="field" value="{{ ratecode }}" />
+						<p id="ratecode_examples">
+							(e.g. <span class="ratecode_example">RACK</span>,
+									<span class="ratecode_example">BAR</span>, 
+									<span class="ratecode_example">COR</span>,
+									<span class="ratecode_example">GOV</span>,
+									<span class="ratecode_example">DAILY</span>)
+						</p>
+					</div>
+					<div class="clear"></div>
+				</div>
+
+				<div class="field_container">
+					<div class="prefix_2 grid_4">
+						<label for="field_hotel">
+							Hotel
+						</label>
+					</div>
+					<div class="grid_6 suffix_4">
+						<input type="text" maxlength="100" name="hotel" id="field_hotel"
+							style="width: 240px;" class="field" value="{{ hotel.name }}" />
+						<input type="hidden" name="hotel_id" id="field_hotel_id" value="{{ hotel_id }}" />
+					</div>
+					<div class="clear"></div>
+				</div>
+				
+				<div class="field_container">
+					<div class="prefix_2 grid_4">
+						<label for="field_date">
+							Date
+						</label>
+					</div>
+					<div class="grid_6 suffix_4">
+						<input type="text" maxlength="10" name="date" id="field_date"
+							style="width: 72px;" class="field" value="{{ date }}" />
+					</div>
+					<div class="clear"></div>
+				</div>
+				
+				<div class="field_container">
+					<div class="prefix_6 grid_10">
+						<input type="submit" name="action" value="Lookup" class="submit"
+						 	style="" />
+					</div>
+					<div class="clear"></div>
+				</div>
+			</form>
+			
+			{% if submitted %}
+			<div id="result_container">
+				<div class="prefix_2 grid_12 suffix_2">
+					<p id="result_message">
+						The <span class="bold">{{ ratecode }}</span>
+						rate at <span class="bold">{{ hotel.name }}</span>
+						for the night of {{ date }}
+						
+						{% if found %}
+						is<br />
+						<span id="the_rate">
+						{% if rate %}{{ rate|floatformat:2 }} {{ currency_code }}{% endif %}
+						{% if rate and points %}and{% endif %}
+						{% if points %}{{ points }} points{% endif %}
+						</span>
+						
+						{% else %}
+						was not found.
+						{% endif %} 
+					</p>
+				</div>	
+				<div class="clear"></div>
+			</div>
+			{% endif %}
+{% endblock %}

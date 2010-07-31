@@ -12,6 +12,7 @@ from google.appengine.api import urlfetch
 
 from app import helper
 from app.models import StarwoodProperty
+from app.parsers import StarwoodParser
 
 import simplejson
 
@@ -135,8 +136,78 @@ class StarwoodPropertiesView(webapp.RequestHandler):
 
 
 
+class RateLookupView(webapp.RequestHandler):
+	def get(self):
+		night = datetime.date.today() + datetime.timedelta(days=30)
+		template_values = {'date': "%d-%02d-%02d" % (night.year, night.month, night.day)}
+			
+		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
+								template_values))
+								
+	def post(self):
+		# ratecode param
+		ratecode = self.request.get('ratecode', default_value='').strip().upper()
+		if not (ratecode and len(ratecode)):
+			ratecode = 'RACK'
+		
+		# hotel param
+		try:
+			hotel_id = int(self.request.get('hotel_id', default_value="-1").strip())
+		except:
+			hotel_id = None
+			
+		if hotel_id:
+			hotel = StarwoodProperty.get_by_id(id=hotel_id)
+			
+		if not hotel_id:
+			hotel_name = self.request.get('hotel', default_value='').strip()
+			
+			# try to look up the hotel based on name
+			if hotel_name and len(hotel_name):
+				hotel = StarwoodProperty.get_by_prop(prop='name', value='hotel_name')
+			else:
+				hotel = None
+				
+			# just pick a random hotel if no hotel id or name specified
+			if not hotel:
+				hotel = StarwoodProperty.random()
+				
+			hotel_id = hotel.id
+		
+		# data param	
+		date = self.request.get('date', default_value='').strip()	
+		if not (date and len(date)):
+			today = datetime.date.today()
+			date = "%d-%02d-%02d" % (today.year, today.month, today.day)
+		
+		
+		template_values = {'ratecode': ratecode, 'hotel_id': hotel_id, 'hotel': hotel, \
+							'date': date, 'submitted': True}
+		
+		if ratecode and hotel_id and date:
+			year, month, day = [int(p) for p in date.split('-')]
+			date_ym = "%d-%02d" % (year, month)
+			avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
+																start_date=date_ym, end_date=date_ym)
+
+			try:
+				night = avail_data['availability'][year][month][day][1]
+			except:
+				night = None
+			
+			template_values['found'] = night is not None
+			if night:
+				template_values['currency_code'] = avail_data['currency_code']
+				template_values['rate'] = night['rate']
+				template_values['points'] = night['pts']
+
+		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
+								template_values))
+
+
 def main():
 	ROUTES = [
+		('/rate-lookup', RateLookupView),
 		('/search', SearchView),
 		('/foo', CreateCoord),
 		('/starwood/(.*)', StarwoodPropertyView),

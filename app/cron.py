@@ -156,7 +156,7 @@ class FetchHotelAvailability(webapp.RequestHandler):
 			end_date = DATE_PATTERN % (end_year, end_month)
 			self.response.out.write("Getting date range %s to %s, inclusive.\n" % (start_date, end_date))
 			
-			avail_data = StarwoodParser.parse_availability(hotel.id, start_date, end_date)
+			avail_data = StarwoodParser.parse_availability(hotel.id, start_date, end_date)['availability']
 			if avail_data and len(avail_data):
 				avail_map = {}
 				for year in avail_data:
