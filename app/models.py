@@ -51,7 +51,7 @@ class StarwoodProperty(db.Model):
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
 	
 	def props(self):
-		props = {'id': self.id, 'name': self.name, 'category': self.category,
+		props = {'id': int(self.id), 'name': self.name, 'category': int(self.category),
 					'address': self.address, 'city': self.city, 'state': self.state,
 					'postal_code': self.postal_code, 'country': self.country,
 					'phone': self.phone, 'fax': self.fax}
@@ -136,6 +136,16 @@ class StarwoodProperty(db.Model):
 	def random():
 		hotel = random.choice(StarwoodProperty.all().fetch(2000))
 		return hotel
+	
+	@staticmethod
+	def all_cache():
+		hotels = memcache.get('hotels')
+		if not hotels:
+			hotels = StarwoodProperty.all()
+			memcache.set('hotels', hotels)
+		
+		return hotels
+		
 
 class StarwoodPropertyDateAvailability(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)

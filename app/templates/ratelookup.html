@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block head_extended %}
-		<link rel="stylesheet" type="text/css" href="/static/css/landing.css" />
 		<link rel="stylesheet" type="text/css" href="/static/css/ratelookup.css" />
 		
 		<link rel="stylesheet" type="text/css" href="/static/libs/jquery-ui-1.8.2/css/redmond/jquery-ui-1.8.2.custom.css">
@@ -18,11 +17,13 @@
 						</label>
 					</div>
 					<div class="grid_6 suffix_4">
-						<input type="text" maxlength="10" name="ratecode" id="field_ratecode"
-							style="width: 72px;" class="field" value="{{ ratecode }}" />
+						<input type="text" maxlength="12" name="ratecode" id="field_ratecode"
+							class="field" value="{{ ratecode }}" />
 						<p id="ratecode_examples">
 							(e.g. <span class="ratecode_example">RACK</span>,
-									<span class="ratecode_example">BAR</span>, 
+									<span class="ratecode_example">BAR1</span>, 
+									<span class="ratecode_example">BAR2</span>,
+									<span class="ratecode_example">BAR3</span>,
 									<span class="ratecode_example">COR</span>,
 									<span class="ratecode_example">GOV</span>,
 									<span class="ratecode_example">DAILY</span>)
@@ -39,7 +40,7 @@
 					</div>
 					<div class="grid_6 suffix_4">
 						<input type="text" maxlength="100" name="hotel" id="field_hotel"
-							style="width: 240px;" class="field" value="{{ hotel.name }}" />
+							class="field" value="{{ hotel.name }}" />
 						<input type="hidden" name="hotel_id" id="field_hotel_id" value="{{ hotel_id }}" />
 					</div>
 					<div class="clear"></div>
@@ -53,7 +54,7 @@
 					</div>
 					<div class="grid_6 suffix_4">
 						<input type="text" maxlength="10" name="date" id="field_date"
-							style="width: 72px;" class="field" value="{{ date }}" />
+							class="field" value="{{ date }}" />
 					</div>
 					<div class="clear"></div>
 				</div>
@@ -73,6 +74,7 @@
 					<p id="result_message">
 						The <span class="bold">{{ ratecode }}</span>
 						rate at <span class="bold">{{ hotel.name }}</span>
+						(category <span>{{ hotel.category }}</span>)
 						for the night of {{ date }}
 						
 						{% if found %}

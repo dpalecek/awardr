@@ -10,6 +10,7 @@ from google.appengine.api import users
 from google.appengine.api import urlfetch
 
 import app.helper as helper
+from app.models import StarwoodProperty
 
 import simplejson
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
@@ -21,46 +22,76 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 starwood_url = 'https://www.starwoodhotels.com/preferredguest/search/ratelist.html'
 
+CAT_POINTS = {
+	1: [{'min': 3000, 'max': 3000}, {'min': 2000, 'max': 2000}],
+	2: [{'min': 4000, 'max': 4000}, {'min': 3000, 'max': 3000}],
+	3: [{'min': 7000, 'max': 7000}, {'min': 7000, 'max': 7000}],
+	4: [{'min': 10000, 'max': 10000}, {'min': 10000, 'max': 10000}],
+	5: [{'min': 12000, 'max': 16000}, {'min': 12000, 'max': 16000}],
+	6: [{'min': 20000, 'max': 25000}, {'min': 20000, 'max': 25000}],
+	7: [{'min': 30000, 'max': 35000}, {'min': 30000, 'max': 35000}],
+}
+
 class StarwoodParser(webapp.RequestHandler):
+	@staticmethod
+	def mod_spg_points(rate, category, year_month_day):
+		day = datetime.date(*[int(p) for p in year_month_day.split('-')])
+		is_weekend = datetime.date.weekday(day) in (4,5)
+		for key in rate:
+			rate[key] = {'pts': CAT_POINTS[category][is_weekend]['min'], 'rate': None}
+		return rate
+		
+	@staticmethod
+	def is_spg_points_rate(ratecode):
+		import re
+		return re.match('SPG[1-7]', ratecode) is not None
+	
 	@staticmethod
 	def parse_availability(hotel_id, start_date, end_date, ratecode='SPGCP'):
 		'''
 		?start=2010-06&end=2010-07&hotel_id=1021&ratecode=BAR1
 		'''
 		
-		availability = {}
+		hotel = StarwoodProperty.get_by_id(id=hotel_id)
 		
-		url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s" \
-					% (start_date, end_date, hotel_id, ratecode)
-		response = urlfetch.fetch(url=url, #"http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id),
-										deadline=10)
-		if response and response.status_code == 200:
-			availability_data = simplejson.loads(response.content)['data']
-			currency_code = availability_data['currencyCode']
+		if not hotel:
+			return None
 			
-			available_dates = availability_data['availDates']
-			if available_dates:
-				for year_month_key in available_dates:
-					year, month = [int(p) for p in year_month_key.split('-')]
-					if not year in availability:
-						availability[year] = {}
-
-					month_data = {}
-					for year_month_day_key in available_dates[year_month_key]:
-						day_data = available_dates[year_month_key][year_month_day_key]
-						day_key = int(year_month_day_key.split('-')[-1])
-						month_data[day_key] = {}
-						for rate in [{int(key): day_data[key]} for key in day_data.keys()]:
-							month_data[day_key].update(rate)
-				
-					availability[year][month] = month_data
-					
 		else:
-			currency_code = None
+			availability = {}
+		
+			url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s" \
+						% (start_date, end_date, hotel_id, ratecode)
+			response = urlfetch.fetch(url=url, #"http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id),
+											deadline=10)
+			if response and response.status_code == 200:
+				availability_data = simplejson.loads(response.content)['data']
+				currency_code = availability_data['currencyCode']
+			
+				available_dates = availability_data['availDates']
+				if available_dates:
+					for year_month_key in available_dates:
+						year, month = [int(p) for p in year_month_key.split('-')]
+						if not year in availability:
+							availability[year] = {}
+
+						month_data = {}
+						for year_month_day_key in available_dates[year_month_key]:
+							day_data = available_dates[year_month_key][year_month_day_key]
+							day_key = int(year_month_day_key.split('-')[-1])
+							month_data[day_key] = {}
+							for rate in [{int(key): day_data[key]} for key in day_data.keys()]:
+								if StarwoodParser.is_spg_points_rate(ratecode):
+									rate = StarwoodParser.mod_spg_points(rate, hotel.category, year_month_day_key)
+								month_data[day_key].update(rate)
+				
+						availability[year][month] = month_data
+					
+			else:
+				currency_code = None
 	
-		return {'currency_code': currency_code, 'availability': availability}
-		
-		
+			return {'currency_code': currency_code, 'availability': availability}
+	
 	
 	@staticmethod
 	def parse_starwood(soup):
@@ -80,6 +111,7 @@ class StarwoodParser(webapp.RequestHandler):
 				return None
 
 		return [parse_points(soup[1]), parse_cashpoints(soup[2])]
+
 
 	@staticmethod
 	def parse_address(soup):
@@ -140,18 +172,27 @@ class StarwoodParser(webapp.RequestHandler):
 			return None
 		
 		
-	def get(self, property_id=None):
+	def get(self, hotel_id=None):
+		hotel_id = int(hotel_id)
 		self.response.headers['Content-Type'] = 'text/plain'
 		
 		ratecode = self.request.get('ratecode', default_value='SPGCP')
+		start_date = self.request.get('start')
+		end_date = self.request.get('end')
 		
-		hotel_props = StarwoodParser.parse(property_id, ratecode)
-		if hotel_props:
-			self.response.out.write("%s" % hotel_props)
-		if not hotel_props:
-			msg = "Property not found or error parsing."
-			self.response.out.write(msg)
-			self.response.set_status(code=500, message=msg)
+		if start_date and end_date:
+			self.response.out.write( \
+				simplejson.dumps( \
+					StarwoodParser.parse_availability(hotel_id, start_date, end_date, ratecode)))
+			
+		else:
+			hotel_props = StarwoodParser.parse(hotel_id, ratecode)
+			if hotel_props:
+				self.response.out.write("%s" % hotel_props)
+			if not hotel_props:
+				msg = "Property not found or error parsing."
+				self.response.out.write(msg)
+				self.response.set_status(code=500, message=msg)
 
 
 def main():

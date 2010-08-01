@@ -28,6 +28,18 @@ input.field {
 	font-size: 12px; 
 }
 
+input#field_ratecode {
+	width: 120px;
+}
+
+input#field_hotel {
+	width: 320px;
+}
+
+input#field_date {
+	width: 72px;
+}
+
 input.submit {
 	margin: 0 0 0 0;
 	display: inline-block;

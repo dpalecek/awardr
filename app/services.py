@@ -63,23 +63,31 @@ class HotelsAutocomplete(webapp.RequestHandler):
 		
 		query = self.request.get('term', default_value='').strip().lower()
 		if query and len(query):
-			hotels = memcache.get('hotels')
-			if not hotels:
-				hotels = StarwoodProperty.all()
-				memcache.set('hotels', hotels)
+			hotels = StarwoodProperty.all_cache()
 				
 			matched_count = 0
 			for hotel in hotels.fetch(2000):
-				if hotel.name.lower().find(query) != -1 or hotel.city.lower().find(query) != -1 \
-								or hotel.country.lower().find(query) != -1 or str(hotel.id).find(query):
+				if hotel.name.lower().find(query) != -1 \
+								or hotel.city.lower().find(query) != -1 \
+								or hotel.country.lower().find(query) != -1 \
+								or str(hotel.id) == query:
 					matched_hotels.append(hotel.props())
 					matched_count += 1
 					if matched_count >= AUTOCOMPLETE_LIMIT:
 						break
 						
 		self.response.out.write(simplejson.dumps(matched_hotels))
-		
 
+
+class HotelsJS(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/javascript'
+		
+		template_values = {'hotels': [hotel.props() for hotel in StarwoodProperty.all_cache()]}
+		self.response.out.write(template.render(helper.get_template_path('hotels', extension='js'),
+								template_values))
+		
+		
 class HotelAvailability(webapp.RequestHandler):
 	def get(self, hotel_id):
 		self.response.headers['Content-Type'] = 'application/json'
@@ -99,6 +107,7 @@ class HotelAvailability(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
+		('/services/hotels.js', HotelsJS),
 		('/services/autocomplete/hotels.json', HotelsAutocomplete),
 		('/services/availability/(.*)/data.json', HotelAvailability),
 		('/services/hotels.json', HotelsLookup),
