@@ -31,11 +31,16 @@ CATEGORY_AWARD_CHOICES = {
 	},
 }
 
+STARWOOD_BRANDS = [
+	"westin", "sheraton", "fourpoints", "whotels", "lemeridien", "stregis", "luxury", "alofthotels", "element"
+]
+
 
 class StarwoodProperty(db.Model):
 	id = db.IntegerProperty(required=True)
 	name = db.StringProperty(required=True)
 	category = db.IntegerProperty(required=True)
+	brand = db.StringProperty(choices=STARWOOD_BRANDS)
 	
 	address = db.StringProperty()
 	city = db.StringProperty()
@@ -47,6 +52,11 @@ class StarwoodProperty(db.Model):
 	
 	phone = db.PhoneNumberProperty()
 	fax = db.PhoneNumberProperty()
+	
+	#http://www.starwoodhotels.com/pub/media/1445/wes1445ex.60365_tn.jpg
+	#http://www.starwoodhotels.com/pub/media/1445/wes1445ex.60365_md.jpg
+	#http://www.starwoodhotels.com/pub/media/1445/wes1445ex.60365_lg.jpg
+	image_url = db.LinkProperty()
 	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
 	
@@ -93,6 +103,10 @@ class StarwoodProperty(db.Model):
 		hotel = None
 		if 'id' in props and StarwoodProperty.get_by_id(int(props['id'])) is None:
 			hotel = StarwoodProperty(id=int(props['id']), name=props['name'], category=int(props['category']))
+			if 'image_url' in props:
+				hotel.image_url = props['image_url']
+			if 'brand' in props:
+				hotel.brand = props['brand']
 
 			addr_props = props['address']
 			if 'address1' in addr_props:

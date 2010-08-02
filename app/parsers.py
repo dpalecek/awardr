@@ -165,6 +165,7 @@ class StarwoodParser(webapp.RequestHandler):
 					hotel_props['id'] = property_id
 					hotel_props['address'] = StarwoodParser.parse_address(soup)
 					hotel_props['awards'] = StarwoodParser.parse_starwood(soup.find("div", "tabsContentContainer").findAll("div", "tabContent"))
+					hotel_props['image_url'] = "http://www.starwoodhotels.com%s" % (soup.find("img", "propertyThumbnail")['src'])
 		
 		if valid_property and len(hotel_props):
 			return hotel_props

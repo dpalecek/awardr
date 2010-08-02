@@ -54,7 +54,7 @@ class FetchProperty(webapp.RequestHandler):
 		if start_prop_id < 300000:
 			task_name = "starwood-property-%d"
 			for prop_id in xrange(start_prop_id, start_prop_id + LIMIT):
-				task = taskqueue.Task(url='/tasks/property', params={'prop_id': prop_id}, \
+				task = taskqueue.Task(url='/tasks/hotel', params={'prop_id': prop_id}, \
 										name=task_name % prop_id, method='GET')
 				try:
 					task.add(TASK_QUEUE)
@@ -74,7 +74,7 @@ class FetchDirectory(webapp.RequestHandler):
 		
 		self.response.headers['Content-Type'] = 'text/plain'
 	
-		directory_ids = []
+		directory_hotels = {}
 	
 		directory_url = "https://www.starwoodhotels.com/corporate/directory/hotels/all/list.html?categoryFilter=%s" % int(category_id)
 		directory_response = urlfetch.fetch(url=directory_url, deadline=10)
@@ -82,16 +82,18 @@ class FetchDirectory(webapp.RequestHandler):
 		if directory_response and directory_response.status_code == 200:
 			soup = BeautifulSoup(directory_response.content)
 			for link in [info_div.find('a', 'propertyName') for info_div in soup.findAll('div', 'propertyInfo') if is_valid_property(info_div)]:
-				directory_ids.append(int(link['href'].split('propertyID=')[1])) #a['href'].split('?')[1].split('&')
+				hotel_url = link['href']
+				logging.info("hotel_url: %s" % hotel_url)
+				directory_hotels[int(hotel_url.split('propertyID=')[1])] = str(hotel_url.split('/')[1]) #a['href'].split('?')[1].split('&')
 		
-		diff_ids = list(frozenset(directory_ids) - frozenset([hotel.id for hotel in StarwoodProperty.all()]))
+		diff_ids = list(frozenset(directory_hotels.keys()) - frozenset([hotel.id for hotel in StarwoodProperty.all()]))
 		diff_ids.sort()
 
-		if diff_ids and len(diff_ids):		
+		if diff_ids and len(diff_ids):	
 			task_name = "starwood-property-%d"
 			for prop_id in diff_ids:
-				task = taskqueue.Task(url='/tasks/property', params={'prop_id': prop_id}, \
-										name=task_name % prop_id, method='GET')
+				task = taskqueue.Task(url='/tasks/hotel', name=task_name % prop_id, method='GET', \
+										params={'prop_id': prop_id, 'brand': directory_hotels[prop_id]})
 				try:
 					task.add(TASK_QUEUE)
 					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE))

@@ -15,9 +15,11 @@ class StarwoodPropertyProcesser(webapp.RequestHandler):
 		self.response.headers['Content-Type'] = 'text/plain'
 		
 		prop_id = int(self.request.get('prop_id', 0))
+		brand = self.request.get('brand')
 		
 		if prop_id:
 			hotel_props = StarwoodParser.parse(prop_id)
+			hotel_props.update({'brand': brand})
 			logging.info("Property id %s => %s" % (prop_id, hotel_props))
 			self.response.out.write("Property id %s => %s\n\n" % (prop_id, hotel_props))
 
@@ -32,7 +34,7 @@ class StarwoodPropertyProcesser(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
-		('/tasks/property', StarwoodPropertyProcesser)
+		('/tasks/hotel', StarwoodPropertyProcesser)
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)
