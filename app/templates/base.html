@@ -2,16 +2,17 @@
 
 <html lang="en">
 	<head>
-		<title>{% block head_title %}awardpad - make the most of your starwood cash &amp; points{% endblock %}</title>
+		<title>{% block head_title %}awardpad - get more out of starwood{% endblock %}</title>
 		<meta charset="UTF-8" />
 		
 		<link rel="stylesheet" type="text/css" href="/static/libs/960/reset.css" />
 		<link rel="stylesheet" type="text/css" href="/static/libs/960/960.css" />
 		
 		<link rel="stylesheet" type="text/css" href="/static/css/base.css" />
+		<link rel="stylesheet" type="text/css" href="/static/css/footer.css" />
 		
 		<script src="http://yui.yahooapis.com/combo?3.1.1/build/yui/yui-min.js"></script>
-		<script src="/services/hotels.js"></script>
+		<script src="/static/js/global.js"></script>
 		
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js"></script>
@@ -20,30 +21,47 @@
 		{% endblock %}
 	</head>
 	<body>
-		<div id="header_wrapper">
-			<div class="container_16">
-				<div class="grid_16" id="header">
-					<h1>
-						<a href="/" class="bold">awardpad</a> - make the most of your starwood points
-					</h1>
+		<div id="top_wrapper_wrapper">
+			<div id="top_wrapper">
+				<div id="header_wrapper">
+					<div class="container_16">
+						<div class="grid_16" id="header">
+							<h1>
+								<a href="/" class="bold">awardpad</a> -
+								get more out of starwood
+							</h1>
+						</div>
+						<div class="clear"></div>
+					</div>
 				</div>
-				<div class="clear"></div>
-			</div>
-		</div>
 		
-		<div id="body_wrapper">
-			<div class="container_16">
-			{% block body_content %}
-			{% endblock %}
+				<div id="body_wrapper">
+					<div class="container_16">
+					{% block body_content %}
+					{% endblock %}
+					</div>
+				</div>
 			</div>
 		</div>
 		
 		<div id="footer_wrapper">
-			<div class="container_16">
-				<div class="grid_16">
-					Copyright 2010
+			<div id="footer">
+				<div class="container_16">
+					<div class="grid_8">
+						<p>
+							Copyright 2010.
+						</p>
+					</div>
+					<div class="grid_8">
+						<p class="right">
+							Drop us a line at <a href="mailto:hello@awardpad.com">hello@awardpad.com</a>
+						</p>
+						{% comment %}
+						<a href="http://www.michaelshafrir.com">Michael Shafrir</a>
+						{% endcomment %}
+					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
 			</div>
 		</div>
 	</body>

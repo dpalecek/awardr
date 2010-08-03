@@ -2,6 +2,8 @@ from google.appengine.ext import db
 from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 
+import app.helper as helper
+
 import urllib
 import random
 
@@ -61,10 +63,15 @@ class StarwoodProperty(db.Model):
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
 	
 	def props(self):
-		props = {'id': int(self.id), 'name': self.name, 'category': int(self.category),
-					'address': self.address, 'city': self.city, 'state': self.state,
-					'postal_code': self.postal_code, 'country': self.country,
-					'phone': self.phone, 'fax': self.fax}
+		props = {'id': int(self.id), \
+					'name': helper.remove_accents(self.name), \
+					'category': int(self.category), \
+					'address': helper.remove_accents(self.address), \
+					'city': helper.remove_accents(self.city), \
+					'state': helper.remove_accents(self.state),
+					'postal_code': helper.remove_accents(self.postal_code), \
+					'country': helper.remove_accents(self.country),
+					'phone': str(self.phone), 'fax': str(self.fax)}
 		if self.coord:
 			props['coord'] = {'lat': self.coord.lat, 'lng': self.coord.lon}
 		return props

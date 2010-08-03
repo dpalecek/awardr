@@ -1,37 +1,26 @@
 {% extends "base.html" %}
 
+{% block head_title %}awardpad - Starwood rate lookup tool{% endblock %}
+
 {% block head_extended %}
-		<link rel="stylesheet" type="text/css" href="/static/css/ratelookup.css" />
-		
-		<link rel="stylesheet" type="text/css" href="/static/libs/jquery-ui-1.8.2/css/redmond/jquery-ui-1.8.2.custom.css">
-		
+		<link rel="stylesheet" type="text/css"
+			href="/static/css/ratelookup.css" />
+		<link rel="stylesheet" type="text/css"
+			href="/static/libs/jquery-ui-1.8.2/css/redmond/jquery-ui-1.8.2.custom.css">
+
+		<script src="/services/hotels.js"></script>
 		<script src="/static/js/ratelookup.js"></script>
 {% endblock %}
 
 {% block body_content %}
+			<div class="prefix_2 grid_12 suffix_2">
+				<p id="intro">
+					Use the Starwood rate lookup tool to find the rate for a given hotel, date, and ratecode.
+				</p>
+			</div>
+			<div class="clear"></div>
+			
 			<form id="form_ratecode" method="post" action="">
-				<div class="field_container">
-					<div class="prefix_2 grid_4">
-						<label for="field_ratecode">
-							Rate Code
-						</label>
-					</div>
-					<div class="grid_6 suffix_4">
-						<input type="text" maxlength="12" name="ratecode" id="field_ratecode"
-							class="field" value="{{ ratecode }}" />
-						<p id="ratecode_examples">
-							(e.g. <span class="ratecode_example">RACK</span>,
-									<span class="ratecode_example">BAR1</span>, 
-									<span class="ratecode_example">BAR2</span>,
-									<span class="ratecode_example">BAR3</span>,
-									<span class="ratecode_example">COR</span>,
-									<span class="ratecode_example">GOV</span>,
-									<span class="ratecode_example">DAILY</span>)
-						</p>
-					</div>
-					<div class="clear"></div>
-				</div>
-
 				<div class="field_container">
 					<div class="prefix_2 grid_4">
 						<label for="field_hotel">
@@ -41,7 +30,30 @@
 					<div class="grid_6 suffix_4">
 						<input type="text" maxlength="100" name="hotel" id="field_hotel"
 							class="field" value="{{ hotel.name }}" />
+						<p class="example">(Start typing and then select a hotel from the list.)
 						<input type="hidden" name="hotel_id" id="field_hotel_id" value="{{ hotel_id }}" />
+					</div>
+					<div class="clear"></div>
+				</div>
+				
+				<div class="field_container">
+					<div class="prefix_2 grid_4">
+						<label for="field_ratecode">
+							Rate Code
+						</label>
+					</div>
+					<div class="grid_6 suffix_4">
+						<input type="text" maxlength="12" name="ratecode" id="field_ratecode"
+							class="field" value="{{ ratecode }}" />
+						<p class="example" id="ratecode_examples">
+							(e.g. <span class="ratecode_example">RACK</span>,
+									<span class="ratecode_example">BAR1</span>, 
+									<span class="ratecode_example">BAR2</span>,
+									<span class="ratecode_example">BAR3</span>,
+									<span class="ratecode_example">COR</span>,
+									<span class="ratecode_example">GOV</span>,
+									<span class="ratecode_example">DAILY</span>)
+						</p>
 					</div>
 					<div class="clear"></div>
 				</div>
@@ -55,6 +67,9 @@
 					<div class="grid_6 suffix_4">
 						<input type="text" maxlength="10" name="date" id="field_date"
 							class="field" value="{{ date }}" />
+						<p class="example">
+							(e.g. YYYY-MM-DD)
+						</p>
 					</div>
 					<div class="clear"></div>
 				</div>

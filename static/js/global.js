@@ -1,1 +1,1 @@
-YUI.namespace('awardr');
+YUI.namespace('awardpad');

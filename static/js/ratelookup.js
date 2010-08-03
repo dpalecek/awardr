@@ -1,9 +1,11 @@
 $(function() {
-	var availableTags = ["c++", "java", "php", "coldfusion", "javascript", "asp", "ruby", "python", "c", "scala", "groovy", "haskell", "perl"];
+	var hotels_source = "/services/autocomplete/hotels.json";
+	//var hotels_source = YUI.awardpad.hotels;
+
 	$("input#field_hotel").autocomplete({
-		source: "/services/autocomplete/hotels.json",
-		minLength: 2,
-		delay: 100,
+		source: hotels_source,
+		minLength: 3,
+		//delay: 2000,
 		select: function(event, ui) {
 			$('input#field_hotel').val(ui.item.name);
 			$('input#field_hotel_id').val(ui.item.id);
@@ -11,12 +13,13 @@ $(function() {
 			return false;
 		}
 	})
-	.data("autocomplete")._renderItem =function(ul, item) {
-		return $("<li></li>" )
+	.data("autocomplete")._renderItem = function(ul, item) {
+		return $("<li/>")
 			.data("item.autocomplete", item)
-			.append("<a><span class=\"bold\">" + item.name + "</span>" + 
+			.append(
+				$("<a/>").append("<span class=\"bold\">" + item.name + "</span>" + 
 					"<br />" + item.city + ", " + item.country + 
-					" - Category " + item.category + "</a>")
+					" - Category " + item.category))
 			.appendTo(ul);
 	};
 	

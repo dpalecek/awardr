@@ -3,6 +3,21 @@ p#intro {
 	font-size:				14px;
 	margin:					10px 0 20px;
 	color:					#444;
+	padding:				10px;
+	background:				#fffadb;
+	font-weight:			bold;
+}
+
+p#more_intro {
+	text-align:				center;
+	font-size:				14px;
+	margin:					10px 0;
+	color:					#222;
+	padding:				10px;
+}
+
+p#more_intro a {
+	font-weight:			bold;
 }
 
 form#landing_form label {

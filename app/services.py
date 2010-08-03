@@ -60,13 +60,11 @@ class HotelsAutocomplete(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'application/json'
 		matched_hotels = []
+		matched_count = 0
 		
 		query = self.request.get('term', default_value='').strip().lower()
 		if query and len(query):
-			hotels = StarwoodProperty.all_cache()
-				
-			matched_count = 0
-			for hotel in hotels.fetch(2000):
+			for hotel in StarwoodProperty.all_cache().fetch(2000):
 				if hotel.name.lower().find(query) != -1 \
 								or hotel.city.lower().find(query) != -1 \
 								or hotel.country.lower().find(query) != -1 \

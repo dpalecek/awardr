@@ -15,7 +15,7 @@ html body div#result_container p#result_message span#the_rate {
 }
 
 .field_container {
-	margin-bottom: 8px;
+	margin-bottom: 12px;
 }
 
 label {
@@ -33,11 +33,12 @@ input#field_ratecode {
 }
 
 input#field_hotel {
-	width: 320px;
+	width: 360px;
 }
 
 input#field_date {
-	width: 72px;
+	width: 74px;
+	text-align: center;
 }
 
 input.submit {
@@ -54,7 +55,15 @@ ul.ui-autocomplete li:hover {
 	cursor: pointer;
 }
 
-p#ratecode_examples {
+p#intro {
+	margin: 8px 0 16px;
+	padding: 4px;
+	background: #fbf6d7;
+	text-align: center;
+	font-weight: bold;
+}
+
+p.example {
 	font-size: 9px;
 	color: #666;
 }

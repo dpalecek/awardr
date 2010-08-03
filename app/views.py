@@ -138,7 +138,7 @@ class StarwoodPropertiesView(webapp.RequestHandler):
 
 class RateLookupView(webapp.RequestHandler):
 	def get(self):
-		night = datetime.date.today() + datetime.timedelta(days=30)
+		night = datetime.date.today() #+ datetime.timedelta(days=30)
 		template_values = {'date': "%d-%02d-%02d" % (night.year, night.month, night.day)}
 			
 		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
@@ -174,18 +174,21 @@ class RateLookupView(webapp.RequestHandler):
 				
 			hotel_id = hotel.id
 		
-		# data param	
-		date = self.request.get('date', default_value='').strip()	
-		if not (date and len(date)):
+		# data param
+		date = self.request.get('date', default_value='').strip()
+		try:
+			year, month, day = [int(p) for p in date.split('-')]
+		except:
 			today = datetime.date.today()
 			date = "%d-%02d-%02d" % (today.year, today.month, today.day)
+			year, month, day = [int(p) for p in date.split('-')]
 		
 		
 		template_values = {'ratecode': ratecode, 'hotel_id': hotel_id, 'hotel': hotel, \
 							'date': date, 'submitted': True}
 		
 		if ratecode and hotel_id and date:
-			year, month, day = [int(p) for p in date.split('-')]
+			
 			date_ym = "%d-%02d" % (year, month)
 			avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
 																start_date=date_ym, end_date=date_ym)

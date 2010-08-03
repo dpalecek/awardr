@@ -3,8 +3,12 @@ body {
 }
 
 #header_wrapper {
-	background:					#BFDBEF;
+	background:					#bfdbef;
 	padding:					6px 0;
+}
+
+#footer {
+	padding-top:				10px;
 }
 
 h1 {
@@ -30,6 +34,13 @@ body div {
 	font-weight:				bold;
 }
 
+.center {
+	text-align:					center;
+}
+
+.right {
+	text-align:					right;
+}
 
 
 input.button3d {

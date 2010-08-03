@@ -5,6 +5,19 @@
 {% endblock %}
 
 {% block body_content %}
+			{% if not launched %}
+			<div class="prefix_2 grid_12 suffix_2">
+				<p id="intro">
+					Awardpad will be launching soon to help you make the most of your
+					Starwood experience.
+				</p>
+				<p id="more_intro">
+					In the meantime, try out the <a href="/rate-lookup">Starwood rate lookup tool</a>.
+				</p>
+			</div>
+			<div class="clear"></div>
+			
+			{% else %}
 			<div class="prefix_1 grid_14 suffix_1">
 				<p id="intro">Have Starwood points burning a hole in your pocket?  Find the best hotels and resorts all over the world to use them, such as the <span class="bold">{{ hotels.0.name }}</span> in
 					{% ifequal hotels.0.country "United States" %}
@@ -82,4 +95,5 @@
 					 		class="button3d"/>
 				</div>
 			</form>
+			{% endif %}
 {% endblock %}

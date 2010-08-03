@@ -1,1 +1,1 @@
-awardr.hotels = {{ hotels }};
+YUI.awardpad.hotels = {{ hotels }};

@@ -59,11 +59,11 @@ class StarwoodParser(webapp.RequestHandler):
 			
 		else:
 			availability = {}
-		
-			url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s" \
-						% (start_date, end_date, hotel_id, ratecode)
-			response = urlfetch.fetch(url=url, #"http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&ratePlan=%s&propertyId=%s" % (start_date, end_date, "SPGCP", hotel_id),
-											deadline=10)
+
+			starwood_url = "http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&propertyId=%s&ratePlan=%s"
+			vendoori_url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s"
+			url = starwood_url % (start_date, end_date, hotel_id, ratecode)
+			response = urlfetch.fetch(url=url, deadline=10)
 			if response and response.status_code == 200:
 				availability_data = simplejson.loads(response.content)['data']
 				currency_code = availability_data['currencyCode']
