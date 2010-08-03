@@ -1,1 +1,1 @@
-YUI.awardpad.hotels = {{ hotels }};
+var all_hotels = {{ hotels }};

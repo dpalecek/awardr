@@ -28,7 +28,7 @@ handlers:
 - url: /bulk/(.*)
   script: app/bulk.python
   
-- url: /static
+- url: /static2
   static_dir: static
 
 - url: /rate-lookup

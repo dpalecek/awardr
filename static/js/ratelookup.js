@@ -1,7 +1,6 @@
 $(function() {
 	var hotels_source = "/services/autocomplete/hotels.json";
-	//var hotels_source = YUI.awardpad.hotels;
-
+	
 	$("input#field_hotel").autocomplete({
 		source: hotels_source,
 		minLength: 3,

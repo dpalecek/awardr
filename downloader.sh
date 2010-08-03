@@ -1,0 +1,1 @@
+appcfg.py download_data --config_file=bulkloader.yaml --filename=awardpad.csv --kind=StarwoodProperty --url=http://awardr.appspot.com/remote_api
