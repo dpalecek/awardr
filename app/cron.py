@@ -12,6 +12,7 @@ from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, Tombston
 
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodPropertyCounter, StarwoodPropertyDateAvailability
+import app.helper as helper
 
 from lib.BeautifulSoup import BeautifulSoup
 import simplejson
@@ -28,17 +29,25 @@ DATE_PATTERN = "%02d-%02d"
 class GeocodeProperty(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
-		hotels = StarwoodProperty.all().filter('coord =', None).fetch(1000)
 		
-		if hotels and len(hotels):
-			random.shuffle(hotels)
-			hotel = hotels[0]
+		try:
+			hotel_id = int(self.request.get('id', default_value=0))
+		except:
+			hotel_id = 0
+		
+		hotels = StarwoodProperty.all().filter('coord =', None)
+		if hotels and hotels.count():
+			if hotel_id:
+				hotel = hotels.filter('id =', hotel_id).get()
+			else:
+				hotel = random.choice(hotels.fetch(2000))
 		else:
 			hotel = None
 			
 		if hotel:
-			self.response.out.write("%s left.\n" % len(hotels))
-			self.response.out.write("%s %s\n%s => %s" % (hotel.id, hotel.name, hotel.full_address(), hotel.geocode()))
+			self.response.out.write("%d left.\n" % hotels.count())
+			self.response.out.write("%d %s\n%s => %s" % \
+					(hotel.id, helper.remove_accents(hotel.name), helper.remove_accents(hotel.full_address()), hotel.geocode()))
 		else:
 			self.response.out.write("All hotels are geocoded.")
 

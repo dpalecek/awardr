@@ -80,7 +80,7 @@ class StarwoodProperty(db.Model):
 		return self.full_address(encoded=True)
 		
 	def full_address(self, encoded=False):
-		full_address = "%s %s %s %s %s" % (self.address, self.city or "", self.state or "", self.postal_code or "", self.country)
+		full_address = helper.remove_accents("%s %s %s %s %s" % (self.address, self.city or "", self.state or "", self.postal_code or "", self.country))
 		if encoded:
 			return urllib.quote_plus(full_address.encode('utf-8'))
 		else:

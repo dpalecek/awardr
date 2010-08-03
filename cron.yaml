@@ -5,7 +5,7 @@ cron:
   
 - description: geocode hotels
   url: /cron/geocode
-  schedule: every 24 hours
+  schedule: every 1 minutes
 
 
   
