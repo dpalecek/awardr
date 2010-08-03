@@ -11,28 +11,28 @@ cron:
   
 - description: fetch new Category 1 properties from Starwood directory
   url: /cron/directory/1
-  schedule: every 4 hours
+  schedule: every 24 hours
 
 - description: fetch new Category 2 properties from Starwood directory
   url: /cron/directory/2
-  schedule: every 4 hours
+  schedule: every 24 hours
 
 - description: fetch new Category 3 properties from Starwood directory
   url: /cron/directory/3
-  schedule: every 4 hours
+  schedule: every 24 hours
   
 - description: fetch new Category 4 properties from Starwood directory
   url: /cron/directory/4
-  schedule: every 4 hours
+  schedule: every 24 hours
 
 - description: fetch new Category 5 properties from Starwood directory
   url: /cron/directory/5
-  schedule: every 4 hours
+  schedule: every 24 hours
 
 - description: fetch new Category 6 properties from Starwood directory
   url: /cron/directory/6
-  schedule: every 4 hours
+  schedule: every 24 hours
 
 - description: fetch new Category 7 properties from Starwood directory
   url: /cron/directory/7
-  schedule: every 4 hours
+  schedule: every 24 hours

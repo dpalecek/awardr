@@ -88,6 +88,8 @@ class FetchDirectory(webapp.RequestHandler):
 		
 		diff_ids = list(frozenset(directory_hotels.keys()) - frozenset([hotel.id for hotel in StarwoodProperty.all()]))
 		diff_ids.sort()
+		
+		added_task_count = 0
 
 		if diff_ids and len(diff_ids):	
 			task_name = "starwood-property-%d"
@@ -97,10 +99,14 @@ class FetchDirectory(webapp.RequestHandler):
 				try:
 					task.add(TASK_QUEUE)
 					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE))
+					added_task_count += 1
 				except TaskAlreadyExistsError:
 					self.response.out.write("Task '%s' already exists in task queue '%s'.\n" % (task.name, TASK_QUEUE))
 				except TombstonedTaskError:
 					self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" % (task.name, TASK_QUEUE))
+			
+			self.response.out.write("\nAdded %d tasks to the queue.\n" % (added_task_count))
+			
 		else:
 			self.response.out.write("No new hotels found in category %s." % (category_id))
 	
