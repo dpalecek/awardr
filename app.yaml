@@ -24,6 +24,9 @@ handlers:
   
 - url: /services/(.*)
   script: app/services.py
+  
+- url: /sandbox/(.*)
+  script: app/sandbox.py
 
 - url: /bulk/(.*)
   script: app/bulk.python

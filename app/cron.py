@@ -25,6 +25,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 LIMIT = 200
 TASK_QUEUE = "starwood-properties"
 DATE_PATTERN = "%02d-%02d"
+TASK_NAME = "starwood-hotel-%d-%d"
 
 class GeocodeProperty(webapp.RequestHandler):
 	def get(self):
@@ -35,7 +36,7 @@ class GeocodeProperty(webapp.RequestHandler):
 		except:
 			hotel_id = 0
 		
-		hotels = StarwoodProperty.all().filter('coord =', None)
+		hotels = StarwoodProperty.all().filter('location =', None)
 		if hotels and hotels.count():
 			if hotel_id:
 				hotel = hotels.filter('id =', hotel_id).get()
@@ -45,9 +46,13 @@ class GeocodeProperty(webapp.RequestHandler):
 			hotel = None
 			
 		if hotel:
-			self.response.out.write("%d left.\n" % hotels.count())
-			self.response.out.write("%d %s\n%s => %s" % \
-					(hotel.id, helper.remove_accents(hotel.name), helper.remove_accents(hotel.full_address()), hotel.geocode()))
+			coord, status = hotel.geocode()
+			self.response.out.write("%d left.\n" % (hotels.count()))
+			self.response.out.write("Geocoder status: %s\n" % (status))
+			self.response.out.write("Hotel id %d: %s\n%s => %s" % \
+					(hotel.id, helper.remove_accents(hotel.name), \
+						helper.remove_accents(hotel.full_address()), \
+						coord))
 		else:
 			self.response.out.write("All hotels are geocoded.")
 
@@ -61,10 +66,11 @@ class FetchProperty(webapp.RequestHandler):
 			start_prop_id = StarwoodPropertyCounter.get_and_increment(LIMIT)
 			
 		if start_prop_id < 300000:
-			task_name = "starwood-property-%d"
 			for prop_id in xrange(start_prop_id, start_prop_id + LIMIT):
-				task = taskqueue.Task(url='/tasks/hotel', params={'prop_id': prop_id}, \
-										name=task_name % prop_id, method='GET')
+				task = taskqueue.Task(url='/tasks/hotel', \
+										params={'prop_id': prop_id}, \
+										name=TASK_NAME % (prop_id, datetime.datetime.now().microsecond), \
+										method='GET')
 				try:
 					task.add(TASK_QUEUE)
 					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE))
@@ -101,9 +107,10 @@ class FetchDirectory(webapp.RequestHandler):
 		added_task_count = 0
 
 		if diff_ids and len(diff_ids):	
-			task_name = "starwood-property-%d"
 			for prop_id in diff_ids:
-				task = taskqueue.Task(url='/tasks/hotel', name=task_name % prop_id, method='GET', \
+				task = taskqueue.Task(url='/tasks/hotel', \
+										name=TASK_NAME % (prop_id, datetime.datetime.now().microsecond), \
+										method='GET', \
 										params={'prop_id': prop_id, 'brand': directory_hotels[prop_id]})
 				try:
 					task.add(TASK_QUEUE)
@@ -196,7 +203,7 @@ class FetchHotelAvailability(webapp.RequestHandler):
 					
 				self.response.out.write("Created %s StarwoodPropertyDateAvailability records.\n" % (len(avail_map)))
 						
-			hotel.save()
+			hotel.put()
 				
 		
 

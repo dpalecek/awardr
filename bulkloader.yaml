@@ -31,6 +31,9 @@ transformers:
       external_name: address
       # Type: String Stats: 1021 properties of this type in this kind.
 
+    - property: address2
+      external_name: address2
+
     - property: category
       external_name: category
       # Type: Integer Stats: 1021 properties of this type in this kind.

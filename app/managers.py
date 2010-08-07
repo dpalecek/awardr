@@ -19,8 +19,9 @@ class HotelManager():
 	@staticmethod
 	def nearest(coord, limit=20):
 		hotel_distance_map = {}
-		for hotel in [hotel for hotel in StarwoodProperty.all() if hotel.coord]:
-			hotel_distance_map[great_circle_distance(coord, {'lat': hotel.coord.lat, 'lng': hotel.coord.long})] = hotel
+		for hotel in [hotel for hotel in StarwoodProperty.all() if hotel.location]:
+			hotel_distance_map[great_circle_distance(coord, \
+				{'lat': hotel.location.lat, 'lng': hotel.location.long})] = hotel
 		
 		if limit == -1:
 			hotel_keys = sorted(hotel_distance_map.keys())

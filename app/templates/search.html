@@ -22,7 +22,17 @@
 			
 			<div id="" style="border-top: 1px solid black; border-bottom: 1px solid black;">
 				<div class="grid_9">
-					list goes here
+					{% if nearest_hotels %}
+					<ul>
+						{% for hotel in nearest_hotels %}
+						<li>
+							{{ hotel.name }}
+						</li>
+						{% endfor %}
+					</ul>
+					{% else %}
+					<p>No hotels found.</p>
+					{% endif %}
 				</div>
 				<div class="grid_7">
 					<div id="hotels_map"></div>

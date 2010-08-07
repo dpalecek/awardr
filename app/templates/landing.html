@@ -19,12 +19,22 @@
 			
 			{% else %}
 			<div class="prefix_1 grid_14 suffix_1">
-				<p id="intro">Have Starwood points burning a hole in your pocket?  Find the best hotels and resorts all over the world to use them, such as the <span class="bold">{{ hotels.0.name }}</span> in
+				<p id="intro">
+					Have Starwood points burning a hole in your pocket?  Find the best
+					hotels and resorts all over the world to use
+
+					{% if hotel %}
+					them, such as the <span class="bold">{{ hotels.0.name }}</span> in
 					{% ifequal hotels.0.country "United States" %}
 					{{ hotels.0.city }}, {{ hotels.0.state }}.
 					{% else %}
 					{{ hotels.0.city }}, {{ hotels.0.country }}.
 					{% endifequal %}
+
+					{% else %}
+					them.
+					
+					{% endif %}
 				</p>
 			</div>
 			<div class="clear"></div>
@@ -55,20 +65,32 @@
 						
 						<select type="select" name="month" id="field_month" class="field">
 							{% for month in months %}
-							<option value="{{ forloop.counter }}">{{ month }}</option>
+							<option value="{{ forloop.counter }}"
+								{% ifequal forloop.counter start_day.month %}
+								selected="selected"
+								{% endifequal %}
+							>{{ month }}</option>
 							{% endfor %}
 						</select>
 						
 						<select type="select" name="day" id="field_day" class="field">
 							{% for day in days %}
-							<option value="{{ day }}">{{ day }}</option>
+							<option value="{{ day }}"
+								{% ifequal forloop.counter start_day.day %}
+								selected="selected"
+								{% endifequal %}
+							>{{ day }}</option>
 							{% endfor %}
 						</select>
 						
 						<select type="select" name="year" id="field_year" class="field">
-							<option value="2010">2010</option>
-							<option value="2011">2011</option>
-							<option value="2012">2012</option>
+							{% for year in years %}
+							<option value="{{ year }}"
+								{% ifequal forloop.counter start_day.year %}
+								selected="selected"
+								{% endifequal %}
+							>{{ year }}</option>
+							{% endfor %}
 						</select>
 					</div>
 					<div class="clear"></div>

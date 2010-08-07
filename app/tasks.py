@@ -19,17 +19,21 @@ class StarwoodPropertyProcesser(webapp.RequestHandler):
 		
 		if prop_id:
 			hotel_props = StarwoodParser.parse(prop_id)
-			hotel_props.update({'brand': brand})
-			logging.info("Property id %s => %s" % (prop_id, hotel_props))
-			self.response.out.write("Property id %s => %s\n\n" % (prop_id, hotel_props))
-
 			if hotel_props:
+				hotel_props.update({'brand': brand})
+				logging.info("Property id %s => %s" % (prop_id, hotel_props))
+				self.response.out.write("Property id %s => %s\n\n" % (prop_id, hotel_props))
+
 				hotel = StarwoodProperty.create(hotel_props)
 				if hotel:
 					logging.info("Created hotel!")
 				else:
 					logging.info("Failed to create hotel!")
-				self.response.out.write("Found prop id %s? %s" % (prop_id, StarwoodProperty.get_by_id(prop_id) is not None))
+					
+				self.response.out.write("Found prop id %s? %s" \
+						% (prop_id, StarwoodProperty.get_by_id(prop_id) is not None))
+			else:
+				self.response.out.write("Did not find prop id %d." % (prop_id))
 
 
 def main():

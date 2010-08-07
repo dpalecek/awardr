@@ -46,11 +46,11 @@ class HotelsLookup(webapp.RequestHandler):
 		
 		hotels = memcache.get('hotels')
 		if not hotels or not len(hotels):
-			hotels = [hotel for hotel in StarwoodProperty.all().filter('coord !=', None)]
+			hotels = [hotel for hotel in StarwoodProperty.all().filter('location !=', None)]
 			memcache.set('hotels', hotels)
 		
 		if sw and ne:
-			hotels = [hotel for hotel in hotels if in_viewport(hotel.coord, sw, ne)]
+			hotels = [hotel for hotel in hotels if in_viewport(hotel.location, sw, ne)]
 		
 		self.response.out.write(simplejson.dumps({'hotels': [hotel.props() for hotel in hotels]}))
 

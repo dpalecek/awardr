@@ -44,6 +44,9 @@
 					<td>{{ hotel.category }}</td>
 					<td>
 						{{ hotel.address }}<br />
+						{% if hotel.address2 %}
+						{{ hotel.address2 }}<br />
+						{% endif %}
 						{{ hotel.city }}
 						{% if hotel.state %}{{ hotel.state }}{% endif %}
 						{% if hotel.postal_code %}{{ hotel.postal_code }}{% endif %}<br />
@@ -52,7 +55,7 @@
 							<a href="http://maps.google.com/maps/api/geocode/json?address={{ hotel.encoded_full_address }}&amp;sensor=false">geocoder</a>
 					</td>
 					<td>
-						{{ hotel.coord }}
+						{{ hotel.location }}
 					</td>
 					<td>
 						{{ hotel.last_checked.month }}/{{ hotel.last_checked.day }}/{{ hotel.last_checked.year }}, {{ hotel.last_checked.hour }}:{{ hotel.last_checked.minute }}:{{ hotel.last_checked.second }}</td>

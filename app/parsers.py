@@ -118,6 +118,10 @@ class StarwoodParser(webapp.RequestHandler):
 		address = {}
 		address_container_soup = soup.find("div", "addressContainer")
 		address['address1'] = unicode(address_container_soup.find("div", "address1").contents[0])
+		try:
+			address['address2'] = unicode(address_container_soup.find("div", "address2").contents[0])
+		except:
+			pass
 
 		for part in ["city", "state", "zipCode", "country"]:
 			try:
@@ -142,16 +146,14 @@ class StarwoodParser(webapp.RequestHandler):
 		valid_property = False
 		hotel_props = {}
 		
-		today = datetime.date.today()
-		tomorrow = today + datetime.timedelta(days=1)
-		date_format = "%s-%02d-%02d"
-		
-		arrival_date = date_format % (today.year, today.month, today.day)
-		departure_date = date_format % (tomorrow.year, tomorrow.month, tomorrow.day)
-		starwood_response = urlfetch.fetch(url='%s?arrivalDate=%s&departureDate=%s&propertyID=%s' % (starwood_url, arrival_date, departure_date, property_id),
+		starwood_response = urlfetch.fetch(url='%s?propertyID=%s' % (starwood_url, property_id),
 											deadline=10)
 		if starwood_response:
-			soup = BeautifulSoup(starwood_response.content)
+			try:
+				soup = BeautifulSoup(starwood_response.content).find(attrs={'id': 'propertyHighlight'}).find(attrs={'class': 'propertyContainer'})
+			except:
+				soup = None
+			
 			if soup:
 				try:
 					hotel_props['name'] = unicode(soup.find("a", "propertyName").contents[0]).strip()
@@ -164,8 +166,8 @@ class StarwoodParser(webapp.RequestHandler):
 				if valid_property:
 					hotel_props['id'] = property_id
 					hotel_props['address'] = StarwoodParser.parse_address(soup)
-					hotel_props['awards'] = StarwoodParser.parse_starwood(soup.find("div", "tabsContentContainer").findAll("div", "tabContent"))
-					hotel_props['image_url'] = "http://www.starwoodhotels.com%s" % (soup.find("img", "propertyThumbnail")['src'])
+					#hotel_props['awards'] = StarwoodParser.parse_starwood(soup.find("div", "tabsContentContainer").findAll("div", "tabContent"))
+					hotel_props['image_url'] = str("http://www.starwoodhotels.com%s" % (soup.find("img", "propertyThumbnail")['src']))
 		
 		if valid_property and len(hotel_props):
 			return hotel_props

@@ -5,9 +5,7 @@ cron:
   
 - description: geocode hotels
   url: /cron/geocode
-  schedule: every 1 minutes
-
-
+  schedule: every 4 hours
   
 - description: fetch new Category 1 properties from Starwood directory
   url: /cron/directory/1

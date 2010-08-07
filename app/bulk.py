@@ -44,35 +44,48 @@ class UploadBulk(webapp.RequestHandler):
 						hotel.address = hotel_data['address']
 					except:
 						pass
+						
+					try:
+						hotel.address2 = hotel_data['address2']
+					except:
+						pass
+						
 					try:
 						hotel.city = hotel_data['city']
 					except:
 						pass
+						
 					try:
 						hotel.state = hotel_data['state']
 					except:
 						pass
+						
 					try:
 						hotel.postal_code = hotel_data['postal_code']
 					except:
 						pass
+						
 					try:
 						hotel.country = hotel_data['country']
 					except:
 						pass
+						
 					try:
 						hotel.phone = hotel_data['phone']
 					except:
 						pass
+						
 					try:
 						hotel.fax = hotel_data['fax']
 					except:
 						pass
+						
 					try:
-						hotel.coord = db.GeoPt(lat=hotel_data['coord']['lat'], lon=hotel_data['coord']['lng'])
+						hotel.location = db.GeoPt(lat=hotel_data['coord']['lat'], lon=hotel_data['coord']['lng'])
 					except:
 						pass
-						
+					
+					hotel.update_location()
 					hotel.put()
 					counter += 1
 		

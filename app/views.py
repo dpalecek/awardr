@@ -15,31 +15,21 @@ from app.models import StarwoodProperty
 from app.parsers import StarwoodParser
 
 import simplejson
+from lib.geomodel import geomodel
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
-class CreateCoord(webapp.RequestHandler):
-	def get(self):
-		offset = int(self.request.get("offset", 0))
-		self.response.headers['Content-Type'] = 'text/plain'
-		for hotel in StarwoodProperty.all().fetch(100, offset):
-			if hotel.coord:
-				pass
-			else:
-				self.response.out.write("Reset (%s) %s.\n" % (hotel.id, hotel.name))
-				hotel.coord = None
-				hotel.save()
-
 
 def geocoder_service(address):
 	url = "http://maps.google.com/maps/api/geocode/json?address=%s&sensor=%s" \
-			% (urllib.quote_plus(address), "true")
+			% (urllib.quote_plus(address), "false")
 	response = urlfetch.fetch(url)
 	if response.status_code == 200:
 		try:
-			return simplejson.loads(response.content)['results'][0]['geometry']['location']
+			loc = simplejson.loads(response.content)['results'][0]['geometry']['location']
+			return db.GeoPt(loc['lat'], loc['lng'])
 		except:
 			pass
 
@@ -48,7 +38,13 @@ def geocoder_service(address):
 class SearchView(webapp.RequestHandler):
 	def get(self):
 		where = self.request.get('where')
-		loc = geocoder_service(where)
+		geo_pt = geocoder_service(where)
+		if geo_pt:
+			nearest_hotels = StarwoodProperty.proximity_fetch( \
+						StarwoodProperty.all().filter('location != ', 'NULL'), \
+						geo_pt, max_results=20)
+		else:
+			nearest_hotels = None
 		
 		try:
 			nights = int(self.request.get('nights', 1))
@@ -75,8 +71,9 @@ class SearchView(webapp.RequestHandler):
 			year = today.year
 		year = max(min(year, today.year + 2), today.year)
 		
-		template_values = {'where': where, 'year': year, 'month': month, 'day': day, 'nights': nights, \
-							'loc': loc}
+		template_values = {'year': year, 'month': month, 'day': day, \
+							'where': where, 'nights': nights, 'loc': geo_pt, \
+							'nearest_hotels': nearest_hotels}
 		self.response.out.write(template.render(helper.get_template_path("search"),
 								template_values))
 		
@@ -84,12 +81,20 @@ class SearchView(webapp.RequestHandler):
 		
 class LandingView(webapp.RequestHandler):
 	def get(self):
-		DAYS = xrange(1,32)
+		launched = self.request.get('launched', default_value=False) == "true"
+
+		start_day = datetime.date.today() + datetime.timedelta(days=30)
 		MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
-		all_hotels = StarwoodProperty.all().fetch(2000)
-		random.shuffle(all_hotels)
+
+		all_hotels = StarwoodProperty.all()
+		if all_hotels and all_hotels.count():
+			hotel = random.choice(all_hotels.fetch(2000))
+		else:
+			hotel = None
 		
-		template_values = {'days': DAYS, 'months': MONTHS, 'hotels': all_hotels,}
+		template_values = {'days': xrange(1,32), 'months': MONTHS, \
+							'years': xrange(2010, 2013), 'start_day': start_day, \
+							'hotel': hotel, 'launched': launched}
 		self.response.out.write(template.render(helper.get_template_path("landing"),
 								template_values))
 		
@@ -108,7 +113,7 @@ class StarwoodPropertyView(webapp.RequestHandler):
 			self.response.out.write("Property with id '%s' not found." % (id))
 		
 		if self.request.get('geocode', None) == 'true':
-			self.response.out.write("\n\ngeocoded: %s" % hotel.geocode())
+			self.response.out.write("\n\ngeocoded: %s" % (hotel.geocode()))
 			
 		'''
 		foo = urlfetch.fetch(url='http://www.hilton.com/en/dt/hotels/search/hotelResWidgetFromPFS.jhtml?checkInDay=1&checkInMonthYr=September+2010&checkOutDay=2&checkOutMonthYr=September+2010&flexCheckInDay=1&flexCheckInMonthYr=September+2010&los=1&ctyhocn=CHINPDT&isReward=true&flexibleSearch=false', deadline=10)
@@ -137,7 +142,7 @@ class StarwoodPropertiesView(webapp.RequestHandler):
 
 
 class RateLookupView(webapp.RequestHandler):
-	def get(self):
+	def get(self):		
 		night = datetime.date.today() #+ datetime.timedelta(days=30)
 		template_values = {'date': "%d-%02d-%02d" % (night.year, night.month, night.day)}
 			
@@ -212,7 +217,6 @@ def main():
 	ROUTES = [
 		('/rate-lookup', RateLookupView),
 		('/search', SearchView),
-		('/foo', CreateCoord),
 		('/starwood/(.*)', StarwoodPropertyView),
 		('/starwood', StarwoodPropertiesView),
 		('/', LandingView),

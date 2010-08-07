@@ -14,3 +14,8 @@ indexes:
   properties:
   - name: category
   - name: id
+
+- kind: StarwoodProperty
+  properties:
+  - name: location_geocells
+  - name: location

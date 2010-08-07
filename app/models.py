@@ -12,6 +12,8 @@ import simplejson
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
+from lib.geomodel import geomodel
+
 
 CATEGORY_AWARD_CHOICES = {
 	'cash_points': {
@@ -38,19 +40,18 @@ STARWOOD_BRANDS = [
 ]
 
 
-class StarwoodProperty(db.Model):
+class StarwoodProperty(geomodel.GeoModel):
 	id = db.IntegerProperty(required=True)
 	name = db.StringProperty(required=True)
 	category = db.IntegerProperty(required=True)
 	brand = db.StringProperty(choices=STARWOOD_BRANDS)
 	
 	address = db.StringProperty()
+	address2 = db.StringProperty()
 	city = db.StringProperty()
 	state = db.StringProperty()
 	postal_code = db.StringProperty()
 	country = db.StringProperty()
-	
-	coord = db.GeoPtProperty()
 	
 	phone = db.PhoneNumberProperty()
 	fax = db.PhoneNumberProperty()
@@ -67,20 +68,26 @@ class StarwoodProperty(db.Model):
 					'name': helper.remove_accents(self.name), \
 					'category': int(self.category), \
 					'address': helper.remove_accents(self.address), \
+					'address2': helper.remove_accents(self.address2), \
 					'city': helper.remove_accents(self.city), \
 					'state': helper.remove_accents(self.state),
 					'postal_code': helper.remove_accents(self.postal_code), \
 					'country': helper.remove_accents(self.country),
 					'phone': str(self.phone), 'fax': str(self.fax)}
-		if self.coord:
-			props['coord'] = {'lat': self.coord.lat, 'lng': self.coord.lon}
+		if self.location:
+			props['coord'] = {'lat': self.location.lat, 'lng': self.location.lon}
 		return props
 	
-	def encoded_full_address(self):
-		return self.full_address(encoded=True)
+	def encoded_full_address(self, with_address2=True):
+		return self.full_address(encoded=True, with_address2=with_address2)
 		
-	def full_address(self, encoded=False):
-		full_address = helper.remove_accents("%s %s %s %s %s" % (self.address, self.city or "", self.state or "", self.postal_code or "", self.country))
+	def full_address(self, encoded=False, with_address2=True):
+		if with_address2:
+			full_address = helper.remove_accents("%s %s %s %s %s %s" % (self.address, self.address2 or "", self.city or "", self.state or "", self.postal_code or "", self.country))
+		else:
+			full_address = helper.remove_accents("%s %s %s %s %s" % (self.address, self.city or "", self.state or "", self.postal_code or "", self.country))
+		
+		full_address = ' '.join(full_address.split())
 		if encoded:
 			return urllib.quote_plus(full_address.encode('utf-8'))
 		else:
@@ -88,22 +95,26 @@ class StarwoodProperty(db.Model):
 		
 	def geocode(self):
 		coord = None
+		status = None
 		
-		geocoder_url = "http://maps.google.com/maps/api/geocode/json?address=%s&sensor=false" % self.encoded_full_address()
+		geocoder_url = "http://maps.google.com/maps/api/geocode/json?address=%s&sensor=%s" \
+							% (self.encoded_full_address(with_address2=False), "false")
 		try:
 			geocoder_response = urlfetch.fetch(geocoder_url)
 			if geocoder_response and geocoder_response.status_code == 200:
 				geocoded = simplejson.loads(geocoder_response.content)
-				if geocoded['status'] == "OK" and len(geocoded['results']):
+				status = geocoded['status']
+				if status == "OK" and len(geocoded['results']):
 					coord = geocoded['results'][0]['geometry']['location']
 		except:
 			pass
 				
 		if coord:
-			self.coord = coord = db.GeoPt(lat=coord['lat'], lon=coord['lng'])
-			self.save()
+			self.location = db.GeoPt(lat=coord['lat'], lon=coord['lng'])
+			self.update_location()
+			self.put()
 
-		return coord
+		return coord, status
 	
 	@staticmethod
 	def create(props):
@@ -118,6 +129,8 @@ class StarwoodProperty(db.Model):
 			addr_props = props['address']
 			if 'address1' in addr_props:
 				hotel.address = addr_props['address1']
+			if 'address2' in addr_props:
+				hotel.address2 = addr_props['address2']
 			if 'city' in addr_props:
 				hotel.city = addr_props['city']
 			if 'state' in addr_props:
