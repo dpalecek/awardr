@@ -10,6 +10,19 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: StarwoodDateAvailability
+  properties:
+  - name: hotel
+  - name: ratecode
+  - name: date
+
+- kind: StarwoodDateAvailability
+  properties:
+  - name: hotel
+  - name: ratecode
+  - name: ratecode
+  - name: date
+
 - kind: StarwoodProperty
   properties:
   - name: category
@@ -19,3 +32,9 @@ indexes:
   properties:
   - name: location_geocells
   - name: location
+
+- kind: StarwoodDateAvailability
+  properties:
+  - name: hotel
+  - name: ratecode
+  - name: date

@@ -12,7 +12,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 
 from app import helper
-from app.models import StarwoodProperty
+from app.models import StarwoodProperty, StarwoodDateAvailability
 
 import simplejson
 from lib.geomodel import geomodel
@@ -55,8 +55,32 @@ class UpdateLocations(webapp.RequestHandler):
 		self.response.out.write("Updated locations.")
 
 
+class ShowAvailability(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		try:
+			hotel_id = int(self.request.get('hotel_id', default_value=''))
+		except:
+			hotel_id = None
+
+		if hotel_id:
+			hotel = StarwoodProperty.get_by_id(hotel_id)
+		else:
+			hotel = None
+			
+		if hotel:
+			self.response.out.write("Hotel: %s\n" % (hotel))
+			
+			for ratecode in ['SPGCP', 'SPG%d' % (hotel.category)]:
+				self.response.out.write("\n\nRatecode: %s\n" % (ratecode))
+				for avail in StarwoodDateAvailability.hotel_query(hotel=hotel).filter('ratecode =', ratecode):
+					self.response.out.write("\t%s\t=>\t%s\n" % (avail.date, [int(n) for n in avail.nights]))
+					
+
 def main():
 	ROUTES = [
+		('/sandbox/availability', ShowAvailability),
 		('/sandbox/duplicates/(.*)', FindDuplicateHotels),
 		('/sandbox/updatelocations', UpdateLocations),
 	]

@@ -97,8 +97,9 @@ class HotelAvailability(webapp.RequestHandler):
 		
 		start_date = self.request.get('start_date')
 		end_date = self.request.get('end_date')
+		ratecode = self.request.get('ratecode')
 		
-		availability = StarwoodParser.parse_availability(hotel_id, start_date, end_date)['availability']
+		availability = StarwoodParser.parse_availability(hotel_id, start_date, end_date, ratecode)['availability']
 					
 		self.response.out.write(simplejson.dumps({'availability': availability}))
 

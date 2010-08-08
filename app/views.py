@@ -35,6 +35,13 @@ def geocoder_service(address):
 
 	return None
 
+'''
+cash & points
+https://www.starwoodhotels.com/preferredguest/booking/cash_points/rates.html?numberOfAdults=2&propertyID=1234&arrivalDate=2010-09-05&departureDate=2010-09-06
+
+points
+https://www.starwoodhotels.com/preferredguest/booking/points/rates.html?numberOfRooms=1&numberOfAdults=2&arrivalDate=2010-09-05&departureDate=2010-09-06&lengthOfStay=1&propertyID=1234&rateCategory=SPG6&roomOccupancyTotal=2
+'''
 class SearchView(webapp.RequestHandler):
 	def get(self):
 		where = self.request.get('where')

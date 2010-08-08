@@ -29,9 +29,7 @@ def get_template_path(template_name, extension=None):
 	return os.path.join(os.path.dirname(__file__), "templates/%s.%s" % (template_name, extension))
 
 def remove_accents(str):
-	nkfd_form = unicodedata.normalize('NFKD', unicode(str))
-	only_ascii = nkfd_form.encode('ASCII', 'ignore')
-	return only_ascii
+	return unicodedata.normalize('NFKD', unicode(str)).encode('ASCII', 'ignore')
 	
 def closest_hotels(coord):
 	StarwoodProperty.all()

@@ -22,6 +22,9 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 starwood_url = 'https://www.starwoodhotels.com/preferredguest/search/ratelist.html'
 
+'''
+{category: [weekday, weekend]}
+'''
 CAT_POINTS = {
 	1: [{'min': 3000, 'max': 3000}, {'min': 2000, 'max': 2000}],
 	2: [{'min': 4000, 'max': 4000}, {'min': 3000, 'max': 3000}],
@@ -34,12 +37,9 @@ CAT_POINTS = {
 
 class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
-	def mod_spg_points(rate, category, year_month_day):
-		day = datetime.date(*[int(p) for p in year_month_day.split('-')])
+	def mod_spg_points(rate, category, day):
 		is_weekend = datetime.date.weekday(day) in (4,5)
-		for key in rate:
-			rate[key] = {'pts': CAT_POINTS[category][is_weekend]['min'], 'rate': None}
-		return rate
+		return {'pts': CAT_POINTS[category][is_weekend]['min'], 'rate': None}
 		
 	@staticmethod
 	def is_spg_points_rate(ratecode):
@@ -47,13 +47,14 @@ class StarwoodParser(webapp.RequestHandler):
 		return re.match('SPG[1-7]', ratecode) is not None
 	
 	@staticmethod
-	def parse_availability(hotel_id, start_date, end_date, ratecode='SPGCP'):
+	def parse_availability(hotel_id, start_date, end_date=None, ratecode='SPGCP'):
+		if not end_date:
+			end_date = start_date
 		'''
 		?start=2010-06&end=2010-07&hotel_id=1021&ratecode=BAR1
 		'''
 		
 		hotel = StarwoodProperty.get_by_id(id=hotel_id)
-		
 		if not hotel:
 			return None
 			
@@ -79,13 +80,17 @@ class StarwoodParser(webapp.RequestHandler):
 						for year_month_day_key in available_dates[year_month_key]:
 							day_data = available_dates[year_month_key][year_month_day_key]
 							day_key = int(year_month_day_key.split('-')[-1])
+							day_date = datetime.date(year, month, day_key)
+							
 							month_data[day_key] = {}
-							for rate in [{int(key): day_data[key]} for key in day_data.keys()]:
+							for night, rate_data in day_data.iteritems():
+								night = int(night)
 								if StarwoodParser.is_spg_points_rate(ratecode):
-									rate = StarwoodParser.mod_spg_points(rate, hotel.category, year_month_day_key)
-								month_data[day_key].update(rate)
-				
-						availability[year][month] = month_data
+									rate_data = StarwoodParser.mod_spg_points(rate_data, hotel.category, day_date + datetime.timedelta(days=night))
+									
+								month_data[day_key][night] = rate_data
+
+						availability[int(year)][int(month)] = month_data
 					
 			else:
 				currency_code = None

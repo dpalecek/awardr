@@ -1,11 +1,13 @@
 cron:
-#- description: lookup property info job
-#  url: /cron/property
-#  schedule: every 24 hours
-  
 - description: geocode hotels
   url: /cron/geocode
-  schedule: every 4 hours
+  schedule: every 2 minutes
+
+
+- description: fetch and process hotel availability
+  url: /cron/availability
+  schedule: every 5 minutes
+  
   
 - description: fetch new Category 1 properties from Starwood directory
   url: /cron/directory/1

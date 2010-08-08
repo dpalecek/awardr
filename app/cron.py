@@ -1,4 +1,5 @@
 import datetime
+import time
 import random
 
 from google.appengine.ext import db
@@ -6,26 +7,30 @@ from google.appengine.ext import webapp
 from google.appengine.api import users
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import urlfetch
-from google.appengine.api.labs import taskqueue
 from google.appengine.api import mail
+from google.appengine.api.labs import taskqueue
 from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
-from app.models import StarwoodProperty, StarwoodPropertyCounter, StarwoodPropertyDateAvailability
+from app.models import StarwoodProperty, StarwoodDateAvailability
 import app.helper as helper
 
 from lib.BeautifulSoup import BeautifulSoup
+from lib.dateutil.relativedelta import relativedelta
 import simplejson
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
+TASK_QUEUE_PROCESS_HOTEL = "starwood-properties"
+TASK_NAME_PROCESS_HOTEL = "starwood-hotel-%d-%d"
 
-LIMIT = 200
-TASK_QUEUE = "starwood-properties"
-DATE_PATTERN = "%02d-%02d"
-TASK_NAME = "starwood-hotel-%d-%d"
+TASK_QUEUE_FETCH_AVAILABILITY = "fetch-starwood-availability"
+TASK_NAME_FETCH_AVAILABILITY = "fetch-starwood-availability-%d-%s-%04d%02d-%02d-%d" #hotel_id, ratecode, start_date, delta
+DATE_FORMAT = "%04d-%02d"
+MONTHS_DELTA = 12
+
 
 class GeocodeProperty(webapp.RequestHandler):
 	def get(self):
@@ -57,31 +62,6 @@ class GeocodeProperty(webapp.RequestHandler):
 			self.response.out.write("All hotels are geocoded.")
 
 
-class FetchProperty(webapp.RequestHandler):
-	def get(self):
-		self.response.headers['Content-Type'] = 'text/plain'
-		
-		start_prop_id = int(self.request.get("prop_id", 0))
-		if not start_prop_id:
-			start_prop_id = StarwoodPropertyCounter.get_and_increment(LIMIT)
-			
-		if start_prop_id < 300000:
-			for prop_id in xrange(start_prop_id, start_prop_id + LIMIT):
-				task = taskqueue.Task(url='/tasks/hotel', \
-										params={'prop_id': prop_id}, \
-										name=TASK_NAME % (prop_id, datetime.datetime.now().microsecond), \
-										method='GET')
-				try:
-					task.add(TASK_QUEUE)
-					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE))
-				except TaskAlreadyExistsError:
-					self.response.out.write("Task '%s' already exists in task queue '%s'.\n" % (task.name, TASK_QUEUE))
-				except TombstonedTaskError:
-					self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" % (task.name, TASK_QUEUE))
-				
-				#self.response.out.write("Could not add task '%s'.\n" % (task.name))
-
-
 class FetchDirectory(webapp.RequestHandler):
 	def get(self, category_id=1):
 		def is_valid_property(d):
@@ -109,111 +89,86 @@ class FetchDirectory(webapp.RequestHandler):
 		if diff_ids and len(diff_ids):	
 			for prop_id in diff_ids:
 				task = taskqueue.Task(url='/tasks/hotel', \
-										name=TASK_NAME % (prop_id, datetime.datetime.now().microsecond), \
+										name=TASK_NAME_PROCESS_HOTEL % (prop_id, datetime.datetime.now().microsecond), \
 										method='GET', \
 										params={'prop_id': prop_id, 'brand': directory_hotels[prop_id]})
 				try:
-					task.add(TASK_QUEUE)
-					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE))
+					task.add(TASK_QUEUE_PROCESS_HOTEL)
+					self.response.out.write("Added task '%s' to task queue '%s'.\n" % (task.name, TASK_QUEUE_PROCESS_HOTEL))
 					added_task_count += 1
 				except TaskAlreadyExistsError:
-					self.response.out.write("Task '%s' already exists in task queue '%s'.\n" % (task.name, TASK_QUEUE))
+					self.response.out.write("Task '%s' already exists in task queue '%s'.\n" % (task.name, TASK_QUEUE_PROCESS_HOTEL))
 				except TombstonedTaskError:
-					self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" % (task.name, TASK_QUEUE))
+					self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" % (task.name, TASK_QUEUE_PROCESS_HOTEL))
 			
 			self.response.out.write("\nAdded %d tasks to the queue.\n" % (added_task_count))
 			
 		else:
 			self.response.out.write("No new hotels found in category %s." % (category_id))
-	
-
-class CheckHotelAvailability(webapp.RequestHandler):
-	def get(self, hotel_id=None):
-		self.response.headers['Content-Type'] = 'text/plain'
-		
-		user = users.get_current_user()
-		
-		found = False
-		
-		if hotel_id:
-			date = self.request.get('date')
-			year, month, day = [str(int(d)) for d in date.split('-')]
-			days = int(self.request.get('days', 1))
-			
-			hotel_availability_url = 'http://awardr.appspot.com/services/availability/%s/data.json' % (int(hotel_id))
-			hotel_availability_response = urlfetch.fetch(url=hotel_availability_url, deadline=10)
-			if hotel_availability_response and hotel_availability_response.status_code == 200:
-				hotel_availability = simplejson.loads(hotel_availability_response.content)['availability']
-				try:
-					if days in hotel_availability[year][month][day]:
-						found = True
-				except:
-					found = False
-					
-		self.response.out.write("Found? %s\n" % found)
-		
-		if user:
-			self.response.out.write('user-email: %s\n' % user.email())
-			mail.send_mail(sender="mshafrir@gmail.com", to=user.email(),
-							subject="Found?", body="%s" % found)
 
 
-class FetchHotelAvailability(webapp.RequestHandler):
+class HotelAvailabilityStarter(webapp.RequestHandler):
 	def get(self):
 		months_delta = int(self.request.get('months', 1))
 		
 		self.response.headers['Content-Type'] = 'text/plain'
 		
-		hotel = StarwoodProperty.all().order('last_checked').get()
+		try:
+			hotel_id = int(self.request.get('hotel_id'))
+		except:
+			hotel_id = None
+		
+		hotels = StarwoodProperty.all()
+		if hotel_id:
+			hotel = hotels.filter('id =', hotel_id).get()
+		else:
+			hotel = hotels.order('last_checked').get()
+			
 		if not hotel:
 			self.response.out.write("Did not get a hotel.\n")
 			
 		else:
 			self.response.out.write("Got hotel %s [%s].\n" % (hotel.name, hotel.id))
+			added_task_count = 0
 			
-			today = datetime.date.today()
-			start_date = DATE_PATTERN % (today.year, today.month)
-			end_year = today.year + (today.month + months_delta) / 13
-			end_month = (today.month + months_delta)
-			if end_month > 12:
-				end_month = end_month % 12
-			end_date = DATE_PATTERN % (end_year, end_month)
-			self.response.out.write("Getting date range %s to %s, inclusive.\n" % (start_date, end_date))
+			for ratecode in ['SPGCP', 'SPG%d' % (hotel.category)]:
+				start_date = datetime.date.today()
+				end_date = start_date + relativedelta(years=2)
+				
+				while start_date < end_date:
+					task = taskqueue.Task(url='/tasks/availability/fetch', \
+											name=TASK_NAME_FETCH_AVAILABILITY \
+													% (hotel.id, ratecode, start_date.year, \
+														start_date.month, MONTHS_DELTA, int(time.time())), \
+											method='GET', \
+											params={'hotel_id': hotel.id, 'ratecode': ratecode, \
+													'date': DATE_FORMAT % (start_date.year, start_date.month), \
+													'months_delta': MONTHS_DELTA})
+
+					try:
+						task.add(TASK_QUEUE_FETCH_AVAILABILITY)
+						self.response.out.write("Added task '%s' to task queue '%s'.\n" \
+												% (task.name, TASK_QUEUE_FETCH_AVAILABILITY))
+						added_task_count += 1
+					except TaskAlreadyExistsError:
+						self.response.out.write("Task '%s' already exists in task queue '%s'.\n" \
+												% (task.name, TASK_QUEUE_FETCH_AVAILABILITY))
+					except TombstonedTaskError:
+						self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" \
+												% (task.name, TASK_QUEUE_FETCH_AVAILABILITY))
+												
+					start_date += relativedelta(months=MONTHS_DELTA)
 			
-			avail_data = StarwoodParser.parse_availability(hotel.id, start_date, end_date)['availability']
-			if avail_data and len(avail_data):
-				avail_map = {}
-				for year in avail_data:
-					for month in avail_data[year]:
-						for day in avail_data[year][month]:
-							nights = avail_data[year][month][day]						
-							if nights and len(nights):
-								avail_map[(int(year), int(month), int(day))] = nights
-
-				current_hotel_avail = StarwoodPropertyDateAvailability.all().filter('hotel=', hotel)
-				if current_hotel_avail and current_hotel_avail.count():
-					db.delete(current_hotel_avail)
-				self.response.out.write("Deleted all existing StarwoodPropertyDateAvailability for this hotel.\n")
-
-				for date in avail_map:
-					a = StarwoodPropertyDateAvailability(hotel=hotel, \
-														date=datetime.date(date[0], date[1], date[2]), \
-														nights=avail_map[date])
-					a.put()
-					
-				self.response.out.write("Created %s StarwoodPropertyDateAvailability records.\n" % (len(avail_map)))
-						
 			hotel.put()
 				
 		
 
 def main():
 	ROUTES = [
-		('/cron/availability/(.*)', CheckHotelAvailability),
-		('/cron/availability', FetchHotelAvailability),
+		('/cron/availability', HotelAvailabilityStarter),
 		('/cron/directory/(.*)', FetchDirectory),
 		('/cron/geocode', GeocodeProperty),
-		('/cron/property', FetchProperty)
+		#('/cron/property', FetchProperty)
 	]
 
 	application = webapp.WSGIApplication(ROUTES, debug=True)

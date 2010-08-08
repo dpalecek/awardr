@@ -39,6 +39,14 @@ STARWOOD_BRANDS = [
 	"westin", "sheraton", "fourpoints", "whotels", "lemeridien", "stregis", "luxury", "alofthotels", "element"
 ]
 
+STARWOOD_RATECODES = [
+	'SPGCP', 'SPG1', 'SPG2', 'SPG3', 'SPG4', 'SPG5', 'SPG6', 'SPG7',
+]
+
+
+class SearchedLocation(geomodel.GeoModel):
+	query = db.StringProperty(required=True)
+
 
 class StarwoodProperty(geomodel.GeoModel):
 	id = db.IntegerProperty(required=True)
@@ -62,6 +70,9 @@ class StarwoodProperty(geomodel.GeoModel):
 	image_url = db.LinkProperty()
 	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
+	
+	def __str__(self):
+		return "%s (%d)" % (self.name, self.id)
 	
 	def props(self):
 		props = {'id': int(self.id), \
@@ -181,14 +192,38 @@ class StarwoodProperty(geomodel.GeoModel):
 		return hotels
 		
 
-class StarwoodPropertyDateAvailability(db.Model):
+class StarwoodDateAvailability(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)
 	date = db.DateProperty(required=True)
-	nights = db.ListProperty(long)
+	ratecode = db.StringProperty(choices=STARWOOD_RATECODES, required=True)
+	nights = db.ListProperty(int, required=True)
 	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
+	
+	def __str__(self):
+		return "%s (%d): %s & %s => %s" \
+				% (self.hotel.name, self.hotel.id, self.date, self.ratecode, self.nights)
+	
+	@staticmethod
+	def git(hotel=None, date=None, ratecode=None):
+		hotel_availability = None
+		if hotel and date and ratecode:
+			hotel_availability = StarwoodDateAvailability.all().filter('hotel =', hotel).filter('date =', date).filter('ratecode =', ratecode).get()
+			
+		return hotel_availability
+		
+	@staticmethod
+	def hotel_query(hotel=None):
+		q = None
+		if hotel:
+			q = StarwoodDateAvailability.all().filter('hotel =', hotel).order('date')
+			
+		return q
+		
+	
 
 
+'''
 class StarwoodPropertyCounter(db.Model):
 	count = db.IntegerProperty(required=True)
 	
@@ -207,3 +242,4 @@ class StarwoodPropertyCounter(db.Model):
 		counter.put()
 		
 		return counter.count - inc_amt
+'''
