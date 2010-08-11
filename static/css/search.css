@@ -1,5 +1,59 @@
+#search_results_container {
+	border-top:					1px solid black;
+	border-bottom:				1px solid black;	
+}
+
 #hotels_map {
-	height:					400px;
-	width:					100%;
-	border-left:			1px solid black;
+	height:						400px;
+	width:						100%;
+	border-left:				1px solid black;
+}
+
+#nearest_hotels_container ol#nearest_hotels {
+	margin:						0;
+	font-size:					14px;
+	list-style-type:			decimal;
+	list-style-position:		outside;
+}
+
+#nearest_hotels_container ol#nearest_hotels li {
+	margin:						0 4px 0 4px;
+	padding:					8px;
+	clear:						both;
+	border-bottom:				1px dashed #444;
+}
+
+#nearest_hotels_container ol#nearest_hotels li.odd {
+	background:					#FFFADB;
+}
+
+#nearest_hotels_container ol#nearest_hotels li.even {
+	background:					#EFEACB;
+}
+
+#nearest_hotels_container ol#nearest_hotels li img.hotel_image {
+	float:						right;
+	display:					block;
+	width:						85px;
+	height:						57px;
+}
+
+#nearest_hotels_container ol#nearest_hotels li .hotel_info {
+	margin-right:				120px;
+	font-size:					11px;
+}
+
+#nearest_hotels_container ol#nearest_hotels li .hotel_name {
+	display:					block;
+	font-size:					14px;
+	font-weight:				bold;
+}
+
+ol#nearest_hotels address {
+	display:					block;
+	margin-left:				10px;
+}
+
+ol#nearest_hotels address .address_part {
+	display:					block;
 }

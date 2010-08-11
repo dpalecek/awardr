@@ -1,11 +1,15 @@
 cron:
 - description: geocode hotels
   url: /cron/geocode
-  schedule: every 2 minutes
+  schedule: every 15 minutes
 
 
 - description: fetch and process hotel availability
   url: /cron/availability
+  schedule: every 2 minutes
+  
+- description: expire past hotel availability
+  url: /cron/expire
   schedule: every 5 minutes
   
   

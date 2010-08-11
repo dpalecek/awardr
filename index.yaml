@@ -32,9 +32,3 @@ indexes:
   properties:
   - name: location_geocells
   - name: location
-
-- kind: StarwoodDateAvailability
-  properties:
-  - name: hotel
-  - name: ratecode
-  - name: date

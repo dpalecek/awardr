@@ -11,7 +11,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 
 from app import helper
-from app.models import StarwoodProperty
+from app.models import StarwoodProperty, GeocodedLocation
 from app.parsers import StarwoodParser
 
 import simplejson
@@ -44,14 +44,21 @@ https://www.starwoodhotels.com/preferredguest/booking/points/rates.html?numberOf
 '''
 class SearchView(webapp.RequestHandler):
 	def get(self):
-		where = self.request.get('where')
-		geo_pt = geocoder_service(where)
-		if geo_pt:
+		where = self.request.get('where', default_value='').strip()
+		if where:
+			geo_loc = GeocodedLocation.getter(where)
+			if not geo_loc:
+				geo_loc = geocoder_service(where)
+				GeocodedLocation.setter(where, geo_loc)
+		else:
+			geo_loc = None
+			
+		if geo_loc:
 			nearest_hotels = StarwoodProperty.proximity_fetch( \
 						StarwoodProperty.all().filter('location != ', 'NULL'), \
-						geo_pt, max_results=20)
+						geo_loc, max_results=10, max_distance=100000) #62 miles
 		else:
-			nearest_hotels = None
+			nearest_hotels = []
 		
 		try:
 			nights = int(self.request.get('nights', 1))
@@ -79,8 +86,9 @@ class SearchView(webapp.RequestHandler):
 		year = max(min(year, today.year + 2), today.year)
 		
 		template_values = {'year': year, 'month': month, 'day': day, \
-							'where': where, 'nights': nights, 'loc': geo_pt, \
-							'nearest_hotels': nearest_hotels}
+							'where': where, 'nights': nights, 'loc': geo_loc, \
+							'nearest_hotels': nearest_hotels,
+							'nearest_hotels_json': [hotel.props() for hotel in nearest_hotels]}
 		self.response.out.write(template.render(helper.get_template_path("search"),
 								template_values))
 		

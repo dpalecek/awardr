@@ -3,6 +3,10 @@ import urllib
 import random
 import datetime
 import wsgiref.handlers
+import StringIO
+import urllib2
+import csv
+
 from collections import defaultdict
 
 from google.appengine.ext import db
@@ -47,12 +51,16 @@ class UpdateLocations(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
 		
-		for hotel in StarwoodProperty.all().filter('location != ', 'NULL'):
-			if hotel.location:
+		offset = int(self.request.get('offset', default_value=0))
+		limit = int(self.request.get('limit', default_value=100))
+		
+		for hotel in StarwoodProperty.all().fetch(limit, offset):
+			if hotel.location and not hotel.location_geocells:
+				self.response.out.write("Updated location for %s.\n" % (hotel))
 				hotel.update_location()
 				hotel.put()
 			
-		self.response.out.write("Updated locations.")
+		self.response.out.write("Updated locations.\n")
 
 
 class ShowAvailability(webapp.RequestHandler):
@@ -78,11 +86,44 @@ class ShowAvailability(webapp.RequestHandler):
 					self.response.out.write("\t%s\t=>\t%s\n" % (avail.date, [int(n) for n in avail.nights]))
 					
 
+
+
+class LoadCoords(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		limit = int(self.request.get('limit', default_value=20))
+		
+		result = urllib2.urlopen('http://dl.dropbox.com/u/31404/awardpad.csv')
+		c_file = StringIO.StringIO(result.read())
+		reader = csv.DictReader(c_file)
+
+		coords = {}
+		for line in reader:
+			id = int(line['id']) #int(line[11])
+			try:
+				coord = [float(l) for l in line['coord'].strip().split(',')]
+				coords[id] = db.GeoPt(*coord)
+			except:
+				None
+			
+		for hotel in StarwoodProperty.all().filter('location =', None)[:limit]:
+			if hotel.id in coords:
+				hotel.location = coords[hotel.id]
+				hotel.update_location()
+				hotel.put()
+			
+				self.response.out.write('Updated %s (%s).\n' % (hotel, hotel.location))
+			else:
+				self.response.out.write('Skipping %s.\n' % (hotel))
+			
+
 def main():
 	ROUTES = [
 		('/sandbox/availability', ShowAvailability),
 		('/sandbox/duplicates/(.*)', FindDuplicateHotels),
 		('/sandbox/updatelocations', UpdateLocations),
+		('/sandbox/loadcoords', LoadCoords),
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)

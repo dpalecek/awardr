@@ -30,6 +30,7 @@ TASK_QUEUE_FETCH_AVAILABILITY = "fetch-starwood-availability"
 TASK_NAME_FETCH_AVAILABILITY = "fetch-starwood-availability-%d-%s-%04d%02d-%02d-%d" #hotel_id, ratecode, start_date, delta
 DATE_FORMAT = "%04d-%02d"
 MONTHS_DELTA = 12
+YEARS_FUTURE = 1
 
 
 class GeocodeProperty(webapp.RequestHandler):
@@ -133,7 +134,7 @@ class HotelAvailabilityStarter(webapp.RequestHandler):
 			
 			for ratecode in ['SPGCP', 'SPG%d' % (hotel.category)]:
 				start_date = datetime.date.today()
-				end_date = start_date + relativedelta(years=2)
+				end_date = start_date + relativedelta(years=YEARS_FUTURE)
 				
 				while start_date < end_date:
 					task = taskqueue.Task(url='/tasks/availability/fetch', \
@@ -160,11 +161,29 @@ class HotelAvailabilityStarter(webapp.RequestHandler):
 					start_date += relativedelta(months=MONTHS_DELTA)
 			
 			hotel.put()
-				
+
+
+
+class CronExpireAvailability(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		try:
+			limit = int(self.request.get('limit', default_value=100))
+		except:
+			limit = 100
+			
+		past_dates = StarwoodDateAvailability.all().filter('date <', datetime.date.today()).fetch(limit)
+		self.response.out.write("Deleting %d expired entries:\n" % len(past_dates))
+		for p in past_dates:
+			self.response.out.write("\t%s\n" % p)
+
+		db.delete(past_dates)		
 		
+
 
 def main():
 	ROUTES = [
+		('/cron/expire', CronExpireAvailability),
 		('/cron/availability', HotelAvailabilityStarter),
 		('/cron/directory/(.*)', FetchDirectory),
 		('/cron/geocode', GeocodeProperty),

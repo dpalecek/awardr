@@ -44,8 +44,35 @@ STARWOOD_RATECODES = [
 ]
 
 
-class SearchedLocation(geomodel.GeoModel):
+class GeocodedLocation(geomodel.GeoModel):
 	query = db.StringProperty(required=True)
+	count = db.IntegerProperty(required=True, default=1)
+	
+	@staticmethod
+	def mod_query(q):
+		return ' '.join(helper.remove_accents(q).strip().split()).replace(',','').lower()
+	
+	@staticmethod
+	def getter(q):
+		g = GeocodedLocation.all().filter('query =', GeocodedLocation.mod_query(q)).get()
+		if g:
+			g.count += 1
+			g.put()
+			
+			return g.location
+		
+		return None
+		
+	@staticmethod
+	def setter(q, coord):
+		if q and coord:
+			geo_loc = GeocodedLocation(query=GeocodedLocation.mod_query(q), location=coord)
+			geo_loc.update_location()
+			geo_loc.put()
+		
+			return geo_loc
+			
+		return None
 
 
 class StarwoodProperty(geomodel.GeoModel):
@@ -84,10 +111,20 @@ class StarwoodProperty(geomodel.GeoModel):
 					'state': helper.remove_accents(self.state),
 					'postal_code': helper.remove_accents(self.postal_code), \
 					'country': helper.remove_accents(self.country),
-					'phone': str(self.phone), 'fax': str(self.fax)}
+					'phone': str(self.phone), 'fax': str(self.fax), \
+					'brand': str(self.brand), 'image_url': str(self.image_url)}
 		if self.location:
 			props['coord'] = {'lat': self.location.lat, 'lng': self.location.lon}
 		return props
+	
+	def html_address(self):
+		return '''
+				<address>
+					<span class=\"address_part\">%s</span>
+					<span class=\"address_part\">%s</span>
+					<span class=\"address_part\">%s, %s %s %s</span>
+				</address>
+		'''  % (self.address, self.address2, self.city, self.state, self.country, self.postal_code)
 	
 	def encoded_full_address(self, with_address2=True):
 		return self.full_address(encoded=True, with_address2=with_address2)
@@ -126,34 +163,29 @@ class StarwoodProperty(geomodel.GeoModel):
 			self.put()
 
 		return coord, status
+				
 	
 	@staticmethod
 	def create(props):
+		logging.info("CREATE!")
+		
 		hotel = None
-		if 'id' in props and StarwoodProperty.get_by_id(int(props['id'])) is None:
-			hotel = StarwoodProperty(id=int(props['id']), name=props['name'], category=int(props['category']))
-			if 'image_url' in props:
-				hotel.image_url = props['image_url']
-			if 'brand' in props:
-				hotel.brand = props['brand']
+		hotel_id = int(props.get('id'))
+		if StarwoodProperty.get_by_id(id=hotel_id) is None:
+			hotel = StarwoodProperty(id=hotel_id, name=props.get('name'), category=int(props.get('category')))
+			hotel.image_url = props.get('image_url')
+			hotel.brand = props.get('brand')
 
-			addr_props = props['address']
-			if 'address1' in addr_props:
-				hotel.address = addr_props['address1']
-			if 'address2' in addr_props:
-				hotel.address2 = addr_props['address2']
-			if 'city' in addr_props:
-				hotel.city = addr_props['city']
-			if 'state' in addr_props:
-				hotel.state = addr_props['state']
-			if 'zipCode' in addr_props:
-				hotel.postal_code = addr_props['zipCode']
-			if 'country' in addr_props:
-				hotel.country = addr_props['country']
-			if 'phone' in addr_props:
-				hotel.phone = addr_props['phone']
-			if 'fax' in addr_props:
-				hotel.fax = addr_props['fax']
+			addr_props = props.get('address')
+			if addr_props:
+				hotel.address = addr_props.get('address1')
+				hotel.address2 = addr_props.get('address2')
+				hotel.city = addr_props.get('city')
+				hotel.state = addr_props.get('state')
+				hotel.postal_code = addr_props.get('zipCode')
+				hotel.country = addr_props.get('country')
+				hotel.phone = addr_props.get('phone')
+				hotel.fax = addr_props.get('fax')
 
 			hotel.put()
 			
@@ -196,7 +228,7 @@ class StarwoodDateAvailability(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)
 	date = db.DateProperty(required=True)
 	ratecode = db.StringProperty(choices=STARWOOD_RATECODES, required=True)
-	nights = db.ListProperty(int, required=True)
+	nights = db.ListProperty(long, required=True)
 	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
 	
@@ -205,20 +237,18 @@ class StarwoodDateAvailability(db.Model):
 				% (self.hotel.name, self.hotel.id, self.date, self.ratecode, self.nights)
 	
 	@staticmethod
-	def git(hotel=None, date=None, ratecode=None):
-		hotel_availability = None
+	def lookup(hotel=None, date=None, ratecode=None):
 		if hotel and date and ratecode:
-			hotel_availability = StarwoodDateAvailability.all().filter('hotel =', hotel).filter('date =', date).filter('ratecode =', ratecode).get()
+			return StarwoodDateAvailability.all().filter('hotel =', hotel).filter('date =', date).filter('ratecode =', ratecode).get()
 			
-		return hotel_availability
+		return None
 		
 	@staticmethod
 	def hotel_query(hotel=None):
-		q = None
 		if hotel:
-			q = StarwoodDateAvailability.all().filter('hotel =', hotel).order('date')
+			return StarwoodDateAvailability.all().filter('hotel =', hotel).order('date')
 			
-		return q
+		return None
 		
 	
 

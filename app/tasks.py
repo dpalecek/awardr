@@ -47,7 +47,8 @@ class FetchStarwoodAvailability(webapp.RequestHandler):
 										hotel_id=hotel_id, \
 										start_date=YEAR_MONTH_FORMAT % (start_date.year, start_date.month), \
 										end_date=YEAR_MONTH_FORMAT % (end_date.year, end_date.month), \
-										ratecode=ratecode)['availability']
+										ratecode=ratecode) \
+									.get('availability')
 			except:
 				pass
 				
@@ -110,11 +111,17 @@ class ProcessStarwoodAvailability(webapp.RequestHandler):
 		nights_list = [int(n) for n in self.request.get_all('nights')]
 
 		if hotel and day and ratecode and nights_list:
-			availability = StarwoodDateAvailability.git(hotel, day, ratecode)
-			if not availability:
+			dirty = True
+			
+			availability = StarwoodDateAvailability.lookup(hotel, day, ratecode)
+			if availability and set(availability.nights) == set(nights_list):
+				dirty = False
+			else:
 				availability = StarwoodDateAvailability(hotel=hotel, date=day, ratecode=ratecode)
-			availability.nights = nights_list
-			availability.put()
+				
+			if dirty:
+				availability.nights = nights_list
+				availability.put()
 			
 			self.response.out.write("%s" % (availability))
 			
@@ -153,7 +160,7 @@ def main():
 	ROUTES = [
 		('/tasks/availability/process', ProcessStarwoodAvailability),
 		('/tasks/availability/fetch', FetchStarwoodAvailability),
-		('/tasks/hotel', StarwoodPropertyProcesser)
+		('/tasks/hotel', StarwoodPropertyProcesser),
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)

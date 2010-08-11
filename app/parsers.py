@@ -73,9 +73,8 @@ class StarwoodParser(webapp.RequestHandler):
 				if available_dates:
 					for year_month_key in available_dates:
 						year, month = [int(p) for p in year_month_key.split('-')]
-						if not year in availability:
-							availability[year] = {}
-
+						availability.setdefault(year, {})
+						
 						month_data = {}
 						for year_month_day_key in available_dates[year_month_key]:
 							day_data = available_dates[year_month_key][year_month_day_key]

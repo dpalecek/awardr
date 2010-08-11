@@ -43,10 +43,14 @@ transformers:
       external_name: city
       # Type: String Stats: 1021 properties of this type in this kind.
 
-    - property: coord
-      external_name: coord
+    - property: location
+      external_name: location
       import_transform: transform.none_if_empty(db.GeoPt)
       # Type: GeoPt Stats: 925 properties of this type in this kind.
+      
+    - property: location_geocells
+      external_name: location_geocells
+      import_transform: "lambda x: len(x) > 0 and eval(x) or ''"
 
     - property: country
       external_name: country
@@ -84,4 +88,10 @@ transformers:
     - property: state
       external_name: state
       # Type: String Stats: 706 properties of this type in this kind.
+      
+    - property: brand
+      external_name: brand
+      
+    - property: image_url
+      external_name: image_url
 
