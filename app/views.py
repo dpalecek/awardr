@@ -11,7 +11,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 
 from app import helper
-from app.models import StarwoodProperty, GeocodedLocation
+from app.models import StarwoodProperty, GeocodedLocation, StarwoodDateAvailability
 from app.parsers import StarwoodParser
 
 import simplejson
@@ -20,6 +20,8 @@ from lib.geomodel import geomodel
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
+
+template.register_template_library('app.filters')
 
 
 def geocoder_service(address):
@@ -44,22 +46,6 @@ https://www.starwoodhotels.com/preferredguest/booking/points/rates.html?numberOf
 '''
 class SearchView(webapp.RequestHandler):
 	def get(self):
-		where = self.request.get('where', default_value='').strip()
-		if where:
-			geo_loc = GeocodedLocation.getter(where)
-			if not geo_loc:
-				geo_loc = geocoder_service(where)
-				GeocodedLocation.setter(where, geo_loc)
-		else:
-			geo_loc = None
-			
-		if geo_loc:
-			nearest_hotels = StarwoodProperty.proximity_fetch( \
-						StarwoodProperty.all().filter('location != ', 'NULL'), \
-						geo_loc, max_results=10, max_distance=100000) #62 miles
-		else:
-			nearest_hotels = []
-		
 		try:
 			nights = int(self.request.get('nights', 1))
 		except:
@@ -85,10 +71,50 @@ class SearchView(webapp.RequestHandler):
 			year = today.year
 		year = max(min(year, today.year + 2), today.year)
 		
-		template_values = {'year': year, 'month': month, 'day': day, \
-							'where': where, 'nights': nights, 'loc': geo_loc, \
-							'nearest_hotels': nearest_hotels,
-							'nearest_hotels_json': [hotel.props() for hotel in nearest_hotels]}
+		start_date = datetime.date(year, month, day)
+		
+		
+		where = self.request.get('where', default_value='').strip()
+		if where:
+			geo_loc = GeocodedLocation.getter(where)
+			if not geo_loc:
+				geo_loc = geocoder_service(where)
+				GeocodedLocation.setter(where, geo_loc)
+		else:
+			geo_loc = None
+			
+		if geo_loc:
+			nearest_hotels = StarwoodProperty.proximity_fetch( \
+						StarwoodProperty.all().filter('location != ', 'NULL'),
+						geo_loc, max_results=10, max_distance=100000) #62 miles
+		else:
+			nearest_hotels = []
+
+		'''
+		available_hotels = []
+		unavailable_hotels = []
+		
+		availabilities = StarwoodDateAvailability.all().filter('date =', start_date).filter('nights =', nights).filter('hotel IN', nearest_hotels)
+		available_hotel_ids = [availability.hotel.id for availability in availabilities]
+		for hotel in nearest_hotels:
+			if hotel.id in available_hotel_ids
+		for hotel_id, ratecode in [(availability.hotel.id, availability.ratecode) for availability in StarwoodDateAvailability.all().filter('date =', start_date).filter('nights =', nights).filter('hotel IN', nearest_hotels)]:
+			if id
+			
+		hotel_ids = [hotel.id for hotel in nearest_hotels]
+		avail_hotel_ids = [avail.hotel.id for avail in StarwoodDateAvailability.all().filter('date =', start_date).filter('nights =', nights)] #.filter('hotel.id IN', hotel_ids)]
+		#					if avail.hotel.id in hotel_ids] #.filter('hotel in', nearest_hotels)
+		#logging.info("\n\n\n%s\n\n\n" % avail_hotel_ids)
+		#nearest_hotels = [hotel for hotel in nearest_hotels if hotel.id in avail_hotel_ids]
+		'''
+		
+		template_values = { \
+			'year': year, 'month': month, 'day': day,
+			'where': where, 'nights': nights,
+			'user_location': geo_loc, 'foo': 0,
+			'nearest_hotels': nearest_hotels,
+			'nearest_hotels_json': [hotel.props() for hotel in nearest_hotels]
+		}
 		self.response.out.write(template.render(helper.get_template_path("search"),
 								template_values))
 		
@@ -96,9 +122,10 @@ class SearchView(webapp.RequestHandler):
 		
 class LandingView(webapp.RequestHandler):
 	def get(self):
-		launched = self.request.get('launched', default_value=False) == "true"
-
-		start_day = datetime.date.today() + datetime.timedelta(days=30)
+		launched = os.environ.get('SERVER_SOFTWARE').startswith('Development') or self.request.get('launched', default_value=False) == "true"
+		
+		today = datetime.date.today()
+		start_day = today + datetime.timedelta(days=30)
 		MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
 
 		all_hotels = StarwoodProperty.all()
@@ -108,8 +135,9 @@ class LandingView(webapp.RequestHandler):
 			hotel = None
 		
 		template_values = {'days': xrange(1,32), 'months': MONTHS, \
-							'years': xrange(2010, 2013), 'start_day': start_day, \
-							'hotel': hotel, 'launched': launched}
+							'years': xrange(today.year, today.year + 3),
+							'start_day': start_day,	'hotel': hotel,
+							'launched': launched}
 		self.response.out.write(template.render(helper.get_template_path("landing"),
 								template_values))
 		
@@ -129,16 +157,7 @@ class StarwoodPropertyView(webapp.RequestHandler):
 		
 		if self.request.get('geocode', None) == 'true':
 			self.response.out.write("\n\ngeocoded: %s" % (hotel.geocode()))
-			
-		'''
-		foo = urlfetch.fetch(url='http://www.hilton.com/en/dt/hotels/search/hotelResWidgetFromPFS.jhtml?checkInDay=1&checkInMonthYr=September+2010&checkOutDay=2&checkOutMonthYr=September+2010&flexCheckInDay=1&flexCheckInMonthYr=September+2010&los=1&ctyhocn=CHINPDT&isReward=true&flexibleSearch=false', deadline=10)
-		if foo and foo.final_url:
-			pass #foo = urlfetch.fetch(foo.final_url)
-		self.response.out.write("\n%s" % foo.final_url)
-		self.response.out.write("\n%s" % foo.status_code)
-		self.response.out.write("\n%s" % foo.headers['set-cookie'].split(';')[0])
-		self.response.out.write("\n\n%s" % foo.content)
-		'''
+		
 		
 		
 class StarwoodPropertiesView(webapp.RequestHandler):

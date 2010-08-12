@@ -10,6 +10,7 @@ from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, Tombston
 
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodDateAvailability
+import app.helper as helper
 
 from lib.dateutil.relativedelta import relativedelta
 
@@ -35,7 +36,7 @@ class FetchStarwoodAvailability(webapp.RequestHandler):
 			hotel_id = None
 			
 		#year_month = self.request.get('date', default_value='')
-		start_date = date(*(datetime.strptime("%s-01" % (self.request.get('date')), "%Y-%m-%d").timetuple()[:3]))
+		start_date = helper.str_to_date(self.request.get('date'))
 		months_delta = int(self.request.get('months_delta', default_value=1)) - 1
 		end_date = start_date + relativedelta(months=+months_delta)
 		ratecode = self.request.get('ratecode', default_value='')

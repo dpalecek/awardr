@@ -31,6 +31,10 @@ handlers:
 - url: /bulk/(.*)
   script: app/bulk.python
   
+- url: /shell(|/(.*))
+  script: app/shell.py
+  login: admin
+  
 - url: /static2
   static_dir: static
 

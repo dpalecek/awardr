@@ -77,14 +77,14 @@ $(document).ready(
 			}
 			
 			var update_map_bounds = function(user_coord) {
-				var bounds = new google.maps.LatLngBounds();
-			    $.each(hotel_markers, function(i) {
-		            bounds.extend(this.getPosition());
-		        });  
-			    bounds.extend(user_coord);
-				hotels_map.fitBounds(bounds);
-				
-				hotels_map.setZoom(hotels_map.getZoom() - 1);
+				if (nearest_hotels && nearest_hotels.length) {
+					var bounds = new google.maps.LatLngBounds();
+				    $.each(hotel_markers, function(i) {
+			            bounds.extend(this.getPosition());
+			        });  
+				    bounds.extend(user_coord);
+					hotels_map.fitBounds(bounds);
+				}
 			}
 			
 			

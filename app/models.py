@@ -100,6 +100,9 @@ class StarwoodProperty(geomodel.GeoModel):
 	
 	def __str__(self):
 		return "%s (%d)" % (self.name, self.id)
+		
+	def calc_key_name(id=None):
+		return (id and "starwood_hotel_%d" % (id)) or None
 	
 	def props(self):
 		props = {'id': int(self.id), \
@@ -118,13 +121,16 @@ class StarwoodProperty(geomodel.GeoModel):
 		return props
 	
 	def html_address(self):
-		return '''
-				<address>
-					<span class=\"address_part\">%s</span>
-					<span class=\"address_part\">%s</span>
-					<span class=\"address_part\">%s, %s %s %s</span>
-				</address>
-		'''  % (self.address, self.address2, self.city, self.state, self.country, self.postal_code)
+		patterns = ["<span class=\"address_part\">%s</span>\n", \
+					"<span class=\"address_part\">%s, %s %s %s</span>\n"]
+		if self.address2:
+			address_contents = ("%s%s%s" % (patterns[0], patterns[0], patterns[1])) \
+					% (self.address, self.address2, self.city, self.state, self.country, self.postal_code)
+		else:
+			address_contents = ("%s%s" % (patterns[0], patterns[1])) \
+					% (self.address, self.city, self.state, self.country, self.postal_code)
+		
+		return "<address>\n%s</address>\n" % address_contents
 	
 	def encoded_full_address(self, with_address2=True):
 		return self.full_address(encoded=True, with_address2=with_address2)
@@ -167,12 +173,12 @@ class StarwoodProperty(geomodel.GeoModel):
 	
 	@staticmethod
 	def create(props):
-		logging.info("CREATE!")
-		
 		hotel = None
 		hotel_id = int(props.get('id'))
 		if StarwoodProperty.get_by_id(id=hotel_id) is None:
-			hotel = StarwoodProperty(id=hotel_id, name=props.get('name'), category=int(props.get('category')))
+			hotel = StarwoodProperty(key_name=StarwoodProperty.calc_key_name(hotel_id), \
+										id=hotel_id, name=props.get('name'),
+										category=int(props.get('category')))
 			hotel.image_url = props.get('image_url')
 			hotel.brand = props.get('brand')
 
@@ -225,10 +231,10 @@ class StarwoodProperty(geomodel.GeoModel):
 		
 
 class StarwoodDateAvailability(db.Model):
-	hotel = db.ReferenceProperty(StarwoodProperty, required=True)
+	hotel = db.ReferenceProperty(StarwoodProperty, required=True, collection_name="hotel_set")
 	date = db.DateProperty(required=True)
 	ratecode = db.StringProperty(choices=STARWOOD_RATECODES, required=True)
-	nights = db.ListProperty(long, required=True)
+	nights = db.ListProperty(int, required=True)
 	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
 	
@@ -249,27 +255,3 @@ class StarwoodDateAvailability(db.Model):
 			return StarwoodDateAvailability.all().filter('hotel =', hotel).order('date')
 			
 		return None
-		
-	
-
-
-'''
-class StarwoodPropertyCounter(db.Model):
-	count = db.IntegerProperty(required=True)
-	
-	@staticmethod
-	def get_and_increment(inc_amt=10):
-		try:
-			counter = StarwoodPropertyCounter.all().get()
-		except:
-			counter = None
-			
-		if not counter:
-			counter = StarwoodPropertyCounter(count=0)
-			counter.put()
-
-		counter.count += inc_amt
-		counter.put()
-		
-		return counter.count - inc_amt
-'''

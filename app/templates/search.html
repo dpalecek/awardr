@@ -4,8 +4,8 @@
 		<link rel="stylesheet" type="text/css" href="/static2/css/search.css" />
 
 		<script>
-			{% if geo_loc %}
-			var user_coord = {'lat': {{ loc.lat }}, 'lng': {{ loc.lon }}};
+			{% if user_location %}
+			var user_coord = {'lat': {{ user_location.lat }}, 'lng': {{ user_location.lon }}};
 			{% else %}
 			var user_coord = null;
 			{% endif %}
