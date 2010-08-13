@@ -25,26 +25,89 @@
 			<div id="search_results_container">
 				<div class="grid_8">
 					<div id="nearest_hotels_container">
-					{% if nearest_hotels %}
-						<ol id="nearest_hotels">
-						{% for hotel in nearest_hotels %}
-							<li class="{% cycle odd,even %}">
-								<img src="{{ hotel.image_url }}" class="hotel_image tiny"
-								 	alt="{{ hotel.name }}" />
+					
+						<h2>Hotels with availability</h2>
+						{% if hotels_tuple.0 %}
+							<ol class="hotels_list" id="available_hotels_list">
+							{% for hotel_data in hotels_tuple.0 %}
+								<li class="hotel {% cycle odd,even %}">
+									<img src="{{ hotel_data.0.image_url }}"
+										class="hotel_image tiny"
+									 	alt="{{ hotel_data.0.name }}" />
 								
-								<div class="hotel_info">
-									<span class="hotel_name">{{ hotel.name }}</span>
+									<div class="hotel_info">
+										<span class="hotel_name">{{ hotel_data.0.name }}</span>
+										{{ hotel_data.0.html_address }}
+									</div>
+									
+									{% if hotel_data.1.SPGCP %}
+									<h3>Cash and Points</h3>
+									<ol class="availability_info">
+									{% comment %}
+										<li>
+											<span class="date">8/22</span>
+											<span class="points">4000 points</span>
+											<span class="cash">$40</span>
+										</li>							
+									{% endcomment %}
+									{% for rate_data in hotel_data.1.SPGCP %}
+										<li>
+											<span class="date">
+												{{ rate_data.date|date:"M j" }}</span>
+											<span class="points">
+												{{ rate_data.rate.points }} points</span>
+											<span class="cash">
+												{{ rate_data.rate.cash }} USD</span>
+										</li>
+									{% endfor %}
+									</ol>
+									{% endif %}
+									
+									{% if hotel_data.1.SPG %}
+									<h3>Points</h3>
+									<ol class="availability_info">
+									{% for rate_data in hotel_data.1.SPG %}
+										<li>
+											<span class="date">
+												{{ rate_data.date|date:"M j" }}</span>
+											<span class="points">
+												{{ rate_data.rate.points }}</span>
+										</li>
+									{% endfor %}
+									</ol>
+									{% endif %}
+								
+									<div class="clear"></div>
+								</li>
+							{% endfor %}
+							</ol>
+						{% else %}
+							<p>No hotels found.</p>
+						{% endif %}
+						
+						
+						{% if hotels_tuple.1 %}
+							<h2>Hotels without availability</h2>
+							
+							<ol class="hotels_list" id="unavailable_hotels_list">
+							{% for hotel in hotels_tuple.1 %}
+								<li class="hotel {% cycle odd,even %}">
+									<img src="{{ hotel.image_url }}" class="hotel_image tiny"
+									 	alt="{{ hotel.name }}" />
+								
+									<div class="hotel_info">
+										<span class="hotel_name">{{ hotel.name }}</span>
 
-									{{ hotel.html_address }}
-								</div>
+										{{ hotel.html_address }}
+									</div>
 								
-								<div class="clear"></div>
-							</li>
-						{% endfor %}
-						</ol>
-					{% else %}
-						<p>No hotels found.</p>
-					{% endif %}
+									<div class="clear"></div>
+								</li>
+							{% endfor %}
+							</ol>
+						{% else %}
+							<p>No hotels found.</p>
+						{% endif %}
 					</div>
 				</div>
 				<div class="grid_8">

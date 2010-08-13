@@ -9,51 +9,78 @@
 	border-left:				1px solid black;
 }
 
-#nearest_hotels_container ol#nearest_hotels {
+#nearest_hotels_container ol.hotels_list {
 	margin:						0;
 	font-size:					14px;
 	list-style-type:			decimal;
 	list-style-position:		outside;
 }
 
-#nearest_hotels_container ol#nearest_hotels li {
+#nearest_hotels_container ol.hotels_list li.hotel {
 	margin:						0 4px 0 4px;
 	padding:					8px;
 	clear:						both;
 	border-bottom:				1px dashed #444;
 }
 
-#nearest_hotels_container ol#nearest_hotels li.odd {
+#nearest_hotels_container ol.hotels_list li.odd {
 	background:					#FFFADB;
 }
 
-#nearest_hotels_container ol#nearest_hotels li.even {
+#nearest_hotels_container ol.hotels_list li.even {
 	background:					#EFEACB;
 }
 
-#nearest_hotels_container ol#nearest_hotels li img.hotel_image {
+#nearest_hotels_container ol.hotels_list li img.hotel_image {
 	float:						right;
 	display:					block;
 	width:						85px;
 	height:						57px;
 }
 
-#nearest_hotels_container ol#nearest_hotels li .hotel_info {
+#nearest_hotels_container ol.hotels_list li .hotel_info {
 	margin-right:				120px;
 	font-size:					11px;
 }
 
-#nearest_hotels_container ol#nearest_hotels li .hotel_name {
+#nearest_hotels_container ol.hotels_list li .hotel_name {
 	display:					block;
 	font-size:					14px;
 	font-weight:				bold;
 }
 
-ol#nearest_hotels address {
+ol.hotels_list address {
 	display:					block;
 	margin-left:				10px;
 }
 
-ol#nearest_hotels address .address_part {
+ol.hotels_list address .address_part {
 	display:					block;
+}
+
+
+
+ol.availability_info {
+	clear:						both;
+	overflow:					auto;
+	width:						100%
+}
+
+ol.availability_info li {
+	float:						left;
+	margin:						0 4px 0 0;
+	background:					#F8FFEF;
+	font-size:					9px;
+	border:						1px solid #666;
+	padding:					2px 4px;
+	width:						70px;
+}
+
+ol.availability_info li span {
+	display:					block;
+	text-align:					center;
+}
+
+ol.availability_info li .date {
+	font-weight:				bold;
 }

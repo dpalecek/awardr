@@ -9,10 +9,11 @@ import random
 
 import simplejson
 
+from lib.geomodel import geomodel
+from lib.dateutil.relativedelta import relativedelta
+
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
-
-from lib.geomodel import geomodel
 
 
 CATEGORY_AWARD_CHOICES = {
@@ -100,7 +101,8 @@ class StarwoodProperty(geomodel.GeoModel):
 	
 	def __str__(self):
 		return "%s (%d)" % (self.name, self.id)
-		
+	
+	@staticmethod
 	def calc_key_name(id=None):
 		return (id and "starwood_hotel_%d" % (id)) or None
 	
@@ -255,3 +257,15 @@ class StarwoodDateAvailability(db.Model):
 			return StarwoodDateAvailability.all().filter('hotel =', hotel).order('date')
 			
 		return None
+		
+	def expand(self):
+		rate_data = []
+		for night in self.nights:
+			date = self.date + relativedelta(days=(night - 1))
+			if self.ratecode == 'SPGCP':
+				r = {'date': date, 'rate': CATEGORY_AWARD_CHOICES['cash_points'][self.hotel.category]}
+			elif self.ratecode.startswith('SPG'):
+				r = {'date': date, 'rate': StarwoodParser.mod_spg_points(self.hotel.category, date)}
+			rate_data.append(r)
+			
+		return rate_data

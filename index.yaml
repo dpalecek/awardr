@@ -22,7 +22,13 @@ indexes:
   - name: ratecode
   - name: ratecode
   - name: date
-
+  
+- kind: StarwoodDateAvailability
+  properties:
+  - name: date
+  - name: hotel
+  - name: nights
+    
 - kind: StarwoodProperty
   properties:
   - name: category

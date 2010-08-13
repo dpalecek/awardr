@@ -37,9 +37,10 @@ CAT_POINTS = {
 
 class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
-	def mod_spg_points(rate, category, day):
-		is_weekend = datetime.date.weekday(day) in (4,5)
-		return {'pts': CAT_POINTS[category][is_weekend]['min'], 'rate': None}
+	def mod_spg_points(category, day):
+		is_weekend = 4 <= datetime.date.weekday(day) <= 5
+		return {'points': CAT_POINTS[category][is_weekend]['min'], \
+				'rate': None}
 		
 	@staticmethod
 	def is_spg_points_rate(ratecode):
@@ -85,7 +86,7 @@ class StarwoodParser(webapp.RequestHandler):
 							for night, rate_data in day_data.iteritems():
 								night = int(night)
 								if StarwoodParser.is_spg_points_rate(ratecode):
-									rate_data = StarwoodParser.mod_spg_points(rate_data, hotel.category, day_date + datetime.timedelta(days=night))
+									rate_data = StarwoodParser.mod_spg_points(hotel.category, day_date + datetime.timedelta(days=night))
 									
 								month_data[day_key][night] = rate_data
 

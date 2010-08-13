@@ -3,6 +3,7 @@ import urllib
 import random
 import datetime
 import wsgiref.handlers
+from collections import defaultdict
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -88,31 +89,36 @@ class SearchView(webapp.RequestHandler):
 						StarwoodProperty.all().filter('location != ', 'NULL'),
 						geo_loc, max_results=10, max_distance=100000) #62 miles
 		else:
-			nearest_hotels = []
-
-		'''
-		available_hotels = []
-		unavailable_hotels = []
-		
-		availabilities = StarwoodDateAvailability.all().filter('date =', start_date).filter('nights =', nights).filter('hotel IN', nearest_hotels)
-		available_hotel_ids = [availability.hotel.id for availability in availabilities]
-		for hotel in nearest_hotels:
-			if hotel.id in available_hotel_ids
-		for hotel_id, ratecode in [(availability.hotel.id, availability.ratecode) for availability in StarwoodDateAvailability.all().filter('date =', start_date).filter('nights =', nights).filter('hotel IN', nearest_hotels)]:
-			if id
+			nearest_hotels = None
 			
-		hotel_ids = [hotel.id for hotel in nearest_hotels]
-		avail_hotel_ids = [avail.hotel.id for avail in StarwoodDateAvailability.all().filter('date =', start_date).filter('nights =', nights)] #.filter('hotel.id IN', hotel_ids)]
-		#					if avail.hotel.id in hotel_ids] #.filter('hotel in', nearest_hotels)
-		#logging.info("\n\n\n%s\n\n\n" % avail_hotel_ids)
-		#nearest_hotels = [hotel for hotel in nearest_hotels if hotel.id in avail_hotel_ids]
-		'''
+			
+		hotels_tuple = ([], [],)
+
+		if nearest_hotels:
+			avail_dict = defaultdict(list)
+			for k, v in [(avail.hotel.id, avail) for avail in \
+							StarwoodDateAvailability.all().filter('date =', start_date).filter('nights =', nights).filter('hotel IN', nearest_hotels).order('date')]:
+				avail_dict[k].append(v)
+			
+			for hotel in nearest_hotels:
+				if hotel.id in avail_dict.keys():
+					rates_data = {}
+					for avail in avail_dict[hotel.id]:
+						if avail.ratecode == 'SPGCP':
+							rates_data['SPGCP'] = avail.expand()
+						else:
+							rates_data['SPG'] = avail.expand()
+					hotels_tuple[0].append((hotel, rates_data))
+				else:
+					hotels_tuple[1].append(hotel)
+					
+			logging.info(hotels_tuple)
 		
 		template_values = { \
 			'year': year, 'month': month, 'day': day,
 			'where': where, 'nights': nights,
 			'user_location': geo_loc, 'foo': 0,
-			'nearest_hotels': nearest_hotels,
+			'hotels_tuple': hotels_tuple,
 			'nearest_hotels_json': [hotel.props() for hotel in nearest_hotels]
 		}
 		self.response.out.write(template.render(helper.get_template_path("search"),
@@ -241,7 +247,7 @@ class RateLookupView(webapp.RequestHandler):
 			if night:
 				template_values['currency_code'] = avail_data['currency_code']
 				template_values['rate'] = night['rate']
-				template_values['points'] = night['pts']
+				template_values['points'] = night['points']
 
 		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
 								template_values))
