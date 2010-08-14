@@ -1,28 +1,135 @@
 #search_results_container {
-	border-top:					1px solid black;
-	border-bottom:				1px solid black;	
+	margin:						10px 0 0 0;
 }
 
 #hotels_map {
 	height:						400px;
 	width:						100%;
-	border-left:				1px solid black;
 }
 
-#nearest_hotels_container ol.hotels_list {
+#search_form_container form#search_form {
+	background:					#FFFADB;
+	display:					block;
+	border-radius:				4px;
+	-moz-border-radius:			4px;
+	-webkit-border-radius:		4px;
+	box-shadow:					0 0 4px #aaa;
+	-moz-box-shadow:			0 0 4px #aaa;
+	-webkit-box-shadow:			0 0 4px #aaa;
+	padding:					7px 10px;
+	text-align:					center;
+	font-size:					16px;
+}
+
+#search_form_container form#search_form input,
+#search_form_container form#search_form select {
+	font-size:					16px;
+}
+
+#search_form_container form#search_form input#field_where {
+	width:						240px;
+}
+
+form#search_form input#field_submit {
+	font-family: "Lucida Grande", Lucida, Arial, sans_serif;
+	background: url('/static2/images/button_bg.png') repeat-x bottom left;
+	margin: 0;
+	width: auto;
+	overflow: visible;
+	display: inline-block;
+	cursor: pointer;
+	border-style: solid;
+	font-weight: bold;
+	border-radius: 6px;
+	-moz-border-radius: 6px;
+	-webkit-border-radius: 6px;
+	/*font-size: 18px;*/
+	font-size: 13px;
+	line-height: 21.6px;
+	/*padding: 5px 18px;*/
+	padding: 2px 10px;
+	border-width: 1px;
+	background-color: #444444;
+	background: -webkit-gradient(linear, left top, left bottom, from(#989898), to(#4f4f4f), color-stop(10%, #6a6a6a), color-stop(50%, #3d3d3d), color-stop(50%, #353535));
+	background: -moz-linear-gradient(left top, left bottom, from(#989898), to(#4f4f4f), color-stop(10%, #6a6a6a), color-stop(50%, #3d3d3d), color-stop(50%, #353535));
+	border-color: #1e1e1e;
+	text-shadow: #040404 0px 1px 1px;
+	color: white;
+	margin: 0 2px;
+	vertical-align: middle;
+}
+
+form#search_form input#field_submit {
+	background-color: #0059b7;
+	background: -webkit-gradient(linear, left top, left bottom, from(#3680ce), to(#1e4b7a));
+	background: -moz-linear-gradient(left top, left bottom, from(#3680ce), to(#1e4b7a));
+	border-color: #153456;
+	text-shadow: #001b38 0px 1px 1px;
+	color: white;
+}
+
+form#search_form input#field_submit::-moz-focus-inner {
+	border: none;
+	padding: 0
+}
+form#search_form input#field_submit:focus {
+	outline: none
+}
+
+form#search_form input#field_submit:hover
+{
+	background:0 to(#1b436e));
+	background-color:#0051a8;
+	border-color:#122d4a;
+	color:#FFF;
+	text-shadow:#001429 0 1px 1px;
+}
+
+form#search_form input#field_submit:active
+{
+	background:0 to(#27629e), color-stop(85%,#205082), color-stop(40%,#205082));
+	background-color:#004a98;
+	border-color:#0f253d;
+	color:#FFF;
+	text-shadow:#000c18 0 -1px -1px;
+}
+
+
+#nearest_hotels_container h2 {
+	font-size:					14px;
 	margin:						0;
+	padding:					10px 0 0 0;
+}
+
+#nearest_hotels_container h2#unavailable_hotels_header {
+	margin-top:					12px;
+	border-top:					1px solid #888;
+}
+
+
+#nearest_hotels_container ol.hotels_list {
+	margin:						0 0 0 20px;
 	font-size:					14px;
 	list-style-type:			decimal;
 	list-style-position:		outside;
 }
 
-#nearest_hotels_container ol.hotels_list li.hotel {
-	margin:						0 4px 0 4px;
-	padding:					8px;
-	clear:						both;
-	border-bottom:				1px dashed #444;
+#nearest_hotels_container ol#unavailable_hotels_list {
+	color:						#444;
 }
 
+#nearest_hotels_container ol.hotels_list li.hotel {
+	margin:						0 4px 0 4px;
+	padding:					8px 8px 10px;
+	clear:						both;
+	border-top:					1px dashed #aaa;
+}
+
+#nearest_hotels_container ol.hotels_list li.hotel.first {
+	border-top:					0;
+}
+
+/*
 #nearest_hotels_container ol.hotels_list li.odd {
 	background:					#FFFADB;
 }
@@ -30,6 +137,7 @@
 #nearest_hotels_container ol.hotels_list li.even {
 	background:					#EFEACB;
 }
+*/
 
 #nearest_hotels_container ol.hotels_list li img.hotel_image {
 	float:						right;
@@ -45,7 +153,7 @@
 
 #nearest_hotels_container ol.hotels_list li .hotel_name {
 	display:					block;
-	font-size:					14px;
+	font-size:					12px;
 	font-weight:				bold;
 }
 
@@ -72,7 +180,7 @@ ol.availability_info li {
 	background:					#F8FFEF;
 	font-size:					9px;
 	border:						1px solid #666;
-	padding:					2px 4px;
+	padding:					4px;
 	width:						70px;
 }
 

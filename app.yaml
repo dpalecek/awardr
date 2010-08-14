@@ -37,6 +37,10 @@ handlers:
   
 - url: /static2
   static_dir: static
+  
+- url: /favicon.ico
+  static_files: static/images/favicon.ico
+  upload: static/images/favicon.ico
 
 - url: /rate-lookup
   script: app/views.py

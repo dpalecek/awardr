@@ -2,6 +2,7 @@ import os
 import urllib
 import random
 import datetime
+import calendar
 import wsgiref.handlers
 from collections import defaultdict
 
@@ -16,13 +17,19 @@ from app.models import StarwoodProperty, GeocodedLocation, StarwoodDateAvailabil
 from app.parsers import StarwoodParser
 
 import simplejson
+
 from lib.geomodel import geomodel
+from lib.dateutil.relativedelta import relativedelta
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
 template.register_template_library('app.filters')
+
+
+
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
 
 
 def geocoder_service(address):
@@ -56,11 +63,6 @@ class SearchView(webapp.RequestHandler):
 		today = datetime.date.today()
 		
 		try:
-			day = int(self.request.get('day', today.day))
-		except:
-			day = today.day
-		
-		try:
 			month = int(self.request.get('month', today.month))
 		except:
 			month = today.month
@@ -71,6 +73,12 @@ class SearchView(webapp.RequestHandler):
 		except:
 			year = today.year
 		year = max(min(year, today.year + 2), today.year)
+		
+		try:
+			max_day = (calendar.mdays[month], 29)[calendar.isleap(year) and month == 2] #handle leap years
+			day = min(int(self.request.get('day', today.day)), max_day)
+		except:
+			day = today.day
 		
 		start_date = datetime.date(year, month, day)
 		
@@ -89,7 +97,7 @@ class SearchView(webapp.RequestHandler):
 						StarwoodProperty.all().filter('location != ', 'NULL'),
 						geo_loc, max_results=10, max_distance=100000) #62 miles
 		else:
-			nearest_hotels = None
+			nearest_hotels = []
 			
 			
 		hotels_tuple = ([], [],)
@@ -105,9 +113,9 @@ class SearchView(webapp.RequestHandler):
 					rates_data = {}
 					for avail in avail_dict[hotel.id]:
 						if avail.ratecode == 'SPGCP':
-							rates_data['SPGCP'] = avail.expand()
+							rates_data['SPGCP'] = avail.expand(nights)
 						else:
-							rates_data['SPG'] = avail.expand()
+							rates_data['SPG'] = avail.expand(nights)
 					hotels_tuple[0].append((hotel, rates_data))
 				else:
 					hotels_tuple[1].append(hotel)
@@ -115,8 +123,11 @@ class SearchView(webapp.RequestHandler):
 			logging.info(hotels_tuple)
 		
 		template_values = { \
-			'year': year, 'month': month, 'day': day,
-			'where': where, 'nights': nights,
+			'user_year': year, 'user_month': month, 'user_day': day,
+			'days': xrange(1,32), 'months': MONTHS,
+			'years': xrange(today.year, today.year + 3),
+			'nights_range': xrange(1,6),
+			'where': where, 'user_nights': nights,
 			'user_location': geo_loc, 'foo': 0,
 			'hotels_tuple': hotels_tuple,
 			'nearest_hotels_json': [hotel.props() for hotel in nearest_hotels]
@@ -131,8 +142,8 @@ class LandingView(webapp.RequestHandler):
 		launched = os.environ.get('SERVER_SOFTWARE').startswith('Development') or self.request.get('launched', default_value=False) == "true"
 		
 		today = datetime.date.today()
-		start_day = today + datetime.timedelta(days=30)
-		MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
+		start_day = today + relativedelta(months=1)
+		
 
 		all_hotels = StarwoodProperty.all()
 		if all_hotels and all_hotels.count():

@@ -1,16 +1,8 @@
-from __future__ import division
-
 import os
 import unicodedata
-import math
 from datetime import date, datetime
 
 from google.appengine.api import users
-from google.appengine.api import memcache
-from google.appengine.ext import db
-from google.appengine.api import urlfetch
-
-from xml.dom.minidom import parse, parseString
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)

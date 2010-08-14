@@ -22,15 +22,65 @@
 {% endblock %}
 
 {% block body_content %}
+			<div id="search_form_container">
+				<div class="grid_16">
+					<form id="search_form" action="/search" method="get">
+						Hotels near
+						<input type="text" name="where" id="field_where"
+						 	value="{{ where }}" />,
+						
+						arriving
+						<select type="select" name="month" id="field_month" class="field">
+							{% for month in months %}
+							<option value="{{ forloop.counter }}"
+								{% ifequal forloop.counter user_month %}selected="selected"{% endifequal %}
+							>{{ month }}</option>
+							{% endfor %}
+						</select>
+						
+						<select type="select" name="day" id="field_day" class="field">
+							{% for day in days %}
+							<option value="{{ day }}"
+								{% ifequal day user_day %}selected="selected"{% endifequal %}
+							>{{ day }}</option>
+							{% endfor %}
+						</select>
+						
+						<select type="select" name="year" id="field_year" class="field">
+							{% for year in years %}
+							<option value="{{ year }}"
+								{% ifequal forloop.counter user_year %}
+								selected="selected"
+								{% endifequal %}
+							>{{ year }}</option>
+							{% endfor %}
+						</select>
+						
+						for
+						<select name="nights" id="field_nights" class="field">
+						{% for night in nights_range %}
+							<option value="{{ night }}"
+								{% ifequal night user_nights %}selected="selected"{% endifequal %}
+							>{{ night }}</option>
+						{% endfor %}
+						</select>
+						nights.
+						
+						<input type="submit" value="Search" id="field_submit" />
+					</form>
+				</div>
+				<div class="clear"></div>
+			</div>
+			
 			<div id="search_results_container">
 				<div class="grid_8">
 					<div id="nearest_hotels_container">
 					
-						<h2>Hotels with availability</h2>
+						<h2>Hotels with award availability</h2>
 						{% if hotels_tuple.0 %}
 							<ol class="hotels_list" id="available_hotels_list">
 							{% for hotel_data in hotels_tuple.0 %}
-								<li class="hotel {% cycle odd,even %}">
+								<li class="hotel {% cycle odd,even %} {% if forloop.first %}first{%endif%}">
 									<img src="{{ hotel_data.0.image_url }}"
 										class="hotel_image tiny"
 									 	alt="{{ hotel_data.0.name }}" />
@@ -53,7 +103,7 @@
 									{% for rate_data in hotel_data.1.SPGCP %}
 										<li>
 											<span class="date">
-												{{ rate_data.date|date:"M j" }}</span>
+												{{ rate_data.date|date:"M j (D)" }}</span>
 											<span class="points">
 												{{ rate_data.rate.points }} points</span>
 											<span class="cash">
@@ -69,9 +119,9 @@
 									{% for rate_data in hotel_data.1.SPG %}
 										<li>
 											<span class="date">
-												{{ rate_data.date|date:"M j" }}</span>
+												{{ rate_data.date|date:"M j (D)" }}</span>
 											<span class="points">
-												{{ rate_data.rate.points }}</span>
+												{{ rate_data.rate.points }} points</span>
 										</li>
 									{% endfor %}
 									</ol>
@@ -87,11 +137,12 @@
 						
 						
 						{% if hotels_tuple.1 %}
-							<h2>Hotels without availability</h2>
+							<h2 id="unavailable_hotels_header">
+								Other hotels in the area</h2>
 							
 							<ol class="hotels_list" id="unavailable_hotels_list">
 							{% for hotel in hotels_tuple.1 %}
-								<li class="hotel {% cycle odd,even %}">
+								<li class="hotel {% cycle odd,even %} {% if forloop.first %}first{%endif%}">
 									<img src="{{ hotel.image_url }}" class="hotel_image tiny"
 									 	alt="{{ hotel.name }}" />
 								
@@ -105,12 +156,10 @@
 								</li>
 							{% endfor %}
 							</ol>
-						{% else %}
-							<p>No hotels found.</p>
 						{% endif %}
 					</div>
 				</div>
-				<div class="grid_8">
+				<div class="prefix_1 grid_7">
 					<div id="hotels_map"></div>
 				</div>
 				<div class="clear"></div>

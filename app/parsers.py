@@ -9,8 +9,9 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import users
 from google.appengine.api import urlfetch
 
+
 import app.helper as helper
-from app.models import StarwoodProperty
+import app.resources as resources
 
 import simplejson
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
@@ -18,28 +19,13 @@ from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
-
-
 starwood_url = 'https://www.starwoodhotels.com/preferredguest/search/ratelist.html'
-
-'''
-{category: [weekday, weekend]}
-'''
-CAT_POINTS = {
-	1: [{'min': 3000, 'max': 3000}, {'min': 2000, 'max': 2000}],
-	2: [{'min': 4000, 'max': 4000}, {'min': 3000, 'max': 3000}],
-	3: [{'min': 7000, 'max': 7000}, {'min': 7000, 'max': 7000}],
-	4: [{'min': 10000, 'max': 10000}, {'min': 10000, 'max': 10000}],
-	5: [{'min': 12000, 'max': 16000}, {'min': 12000, 'max': 16000}],
-	6: [{'min': 20000, 'max': 25000}, {'min': 20000, 'max': 25000}],
-	7: [{'min': 30000, 'max': 35000}, {'min': 30000, 'max': 35000}],
-}
 
 class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
 	def mod_spg_points(category, day):
 		is_weekend = 4 <= datetime.date.weekday(day) <= 5
-		return {'points': CAT_POINTS[category][is_weekend]['min'], \
+		return {'points': resources.CATEGORY_AWARD_CHOICES['points'][category][is_weekend]['min'], \
 				'rate': None}
 		
 	@staticmethod
@@ -49,6 +35,8 @@ class StarwoodParser(webapp.RequestHandler):
 	
 	@staticmethod
 	def parse_availability(hotel_id, start_date, end_date=None, ratecode='SPGCP'):
+		from app.models import StarwoodProperty
+		
 		if not end_date:
 			end_date = start_date
 		'''

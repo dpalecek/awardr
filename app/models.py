@@ -2,7 +2,9 @@ from google.appengine.ext import db
 from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 
+from app.parsers import StarwoodParser
 import app.helper as helper
+import app.resources as resources
 
 import urllib
 import random
@@ -16,25 +18,7 @@ import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
-CATEGORY_AWARD_CHOICES = {
-	'cash_points': {
-		1: {'points': 1200, 'cash': 25,},
-		2: {'points': 1600, 'cash': 30,},
-		3: {'points': 4000, 'cash': 45,},
-		4: {'points': 4000, 'cash': 60,},
-		5: {'points': 4800, 'cash': 90,},
-		6: {'points': 8000, 'cash': 150,},
-	},
-	'points': {
-		1: {'points': 3000},
-		2: {'points': 4000},
-		3: {'points': 7000},
-		4: {'points': 10000},
-		5: {'points': 12000},
-		6: {'points': 20000},
-		7: {'points': 30000},
-	},
-}
+
 
 STARWOOD_BRANDS = [
 	"westin", "sheraton", "fourpoints", "whotels", "lemeridien", "stregis", "luxury", "alofthotels", "element"
@@ -98,6 +82,7 @@ class StarwoodProperty(geomodel.GeoModel):
 	image_url = db.LinkProperty()
 	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
+	
 	
 	def __str__(self):
 		return "%s (%d)" % (self.name, self.id)
@@ -258,12 +243,12 @@ class StarwoodDateAvailability(db.Model):
 			
 		return None
 		
-	def expand(self):
+	def expand(self, nights_count=0):
 		rate_data = []
-		for night in self.nights:
-			date = self.date + relativedelta(days=(night - 1))
+		for night in xrange(nights_count):
+			date = self.date + relativedelta(days=night)
 			if self.ratecode == 'SPGCP':
-				r = {'date': date, 'rate': CATEGORY_AWARD_CHOICES['cash_points'][self.hotel.category]}
+				r = {'date': date, 'rate': resources.CATEGORY_AWARD_CHOICES['cash_points'][self.hotel.category]}
 			elif self.ratecode.startswith('SPG'):
 				r = {'date': date, 'rate': StarwoodParser.mod_spg_points(self.hotel.category, date)}
 			rate_data.append(r)
