@@ -17,6 +17,7 @@ from google.appengine.api import urlfetch
 
 from app import helper
 from app.models import StarwoodProperty, StarwoodDateAvailability
+from app import resources
 
 import simplejson
 from lib.geomodel import geomodel
@@ -116,10 +117,32 @@ class LoadCoords(webapp.RequestHandler):
 				self.response.out.write('Updated %s (%s).\n' % (hotel, hotel.location))
 			else:
 				self.response.out.write('Skipping %s.\n' % (hotel))
+
 			
+class ShowCountries(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		countries = {}
+		
+		for country, id in ((hotel.country, hotel.id) for hotel in StarwoodProperty.all()):
+			if not countries.get(country):
+				countries[country] = {'count': 0, 'id': int(id)}
+			countries[country]['count'] += 1
+			
+		self.response.out.write("Found %d countries.\n\n" % len(countries))
+		
+		country_keys = countries.keys()
+		country_keys.sort()
+		logging.info('%s' % country_keys)
+		for i, country in enumerate(country_keys):
+			if not resources.CURRENCIES.get(country):
+				self.response.out.write("%d. %s => %s\n" % (i + 1, country, countries[country]))
+
 
 def main():
 	ROUTES = [
+		('/sandbox/countries', ShowCountries),
 		('/sandbox/availability', ShowAvailability),
 		('/sandbox/duplicates/(.*)', FindDuplicateHotels),
 		('/sandbox/updatelocations', UpdateLocations),

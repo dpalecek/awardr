@@ -8,6 +8,7 @@ import app.resources as resources
 
 import urllib
 import random
+import datetime
 
 import simplejson
 
@@ -27,6 +28,8 @@ STARWOOD_BRANDS = [
 STARWOOD_RATECODES = [
 	'SPGCP', 'SPG1', 'SPG2', 'SPG3', 'SPG4', 'SPG5', 'SPG6', 'SPG7',
 ]
+
+CURRENCY_CHOICES = []
 
 
 class GeocodedLocation(geomodel.GeoModel):
@@ -81,7 +84,10 @@ class StarwoodProperty(geomodel.GeoModel):
 	#http://www.starwoodhotels.com/pub/media/1445/wes1445ex.60365_lg.jpg
 	image_url = db.LinkProperty()
 	
+	currency = db.StringProperty() #CURRENCY_CHOICES)
+	
 	last_checked = db.DateTimeProperty(required=True, auto_now=True)
+	last_refreshed = db.DateTimeProperty(required=True, auto_now=True, default=datetime.datetime.now())
 	
 	
 	def __str__(self):
@@ -248,9 +254,10 @@ class StarwoodDateAvailability(db.Model):
 		for night in xrange(nights_count):
 			date = self.date + relativedelta(days=night)
 			if self.ratecode == 'SPGCP':
-				r = {'date': date, 'rate': resources.CATEGORY_AWARD_CHOICES['cash_points'][self.hotel.category]}
+				rate = resources.CATEGORY_AWARD_CHOICES['cash_points'][self.hotel.category]
 			elif self.ratecode.startswith('SPG'):
-				r = {'date': date, 'rate': StarwoodParser.mod_spg_points(self.hotel.category, date)}
-			rate_data.append(r)
+				rate = StarwoodParser.mod_spg_points(self.hotel.category, date)
+			rate_data.append({'date': date, 'rate': rate})
 			
-		return rate_data
+		return {'check_in': self.date, 'check_out': self.date + relativedelta(days=nights_count), \
+					'rates': rate_data}

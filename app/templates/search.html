@@ -25,23 +25,28 @@
 			<div id="search_form_container">
 				<div class="grid_16">
 					<form id="search_form" action="/search" method="get">
-						Hotels near
-						<input type="text" name="where" id="field_where"
-						 	value="{{ where }}" />,
+						Hotels
 						
-						arriving
-						<select type="select" name="month" id="field_month" class="field">
-							{% for month in months %}
-							<option value="{{ forloop.counter }}"
-								{% ifequal forloop.counter user_month %}selected="selected"{% endifequal %}
-							>{{ month }}</option>
-							{% endfor %}
-						</select>
+						<label for="field_where">
+							near
+							<input type="text" name="where" id="field_where"
+						 		value="{{ where }}" /></label>,
+						
+						<label for="field_month">
+							arriving
+							<select type="select" name="month" id="field_month" class="field">
+								{% for month in months %}
+								<option value="{{ forloop.counter }}"
+									{% ifequal forloop.counter start_date.month %}selected="selected"{% endifequal %}
+								>{{ month }}</option>
+								{% endfor %}
+							</select>
+						</label>
 						
 						<select type="select" name="day" id="field_day" class="field">
 							{% for day in days %}
 							<option value="{{ day }}"
-								{% ifequal day user_day %}selected="selected"{% endifequal %}
+								{% ifequal day start_date.day %}selected="selected"{% endifequal %}
 							>{{ day }}</option>
 							{% endfor %}
 						</select>
@@ -49,14 +54,14 @@
 						<select type="select" name="year" id="field_year" class="field">
 							{% for year in years %}
 							<option value="{{ year }}"
-								{% ifequal forloop.counter user_year %}
+								{% ifequal forloop.counter start_date.year %}
 								selected="selected"
 								{% endifequal %}
 							>{{ year }}</option>
 							{% endfor %}
 						</select>
 						
-						for
+						<label for="field_nights">for
 						<select name="nights" id="field_nights" class="field">
 						{% for night in nights_range %}
 							<option value="{{ night }}"
@@ -64,7 +69,9 @@
 							>{{ night }}</option>
 						{% endfor %}
 						</select>
-						nights.
+						<span id="nights_text">
+							{% ifequal user_nights 1 %}night{% else %}nights{% endifequal %}.
+						</span></label>
 						
 						<input type="submit" value="Search" id="field_submit" />
 					</form>
@@ -100,7 +107,7 @@
 											<span class="cash">$40</span>
 										</li>							
 									{% endcomment %}
-									{% for rate_data in hotel_data.1.SPGCP %}
+									{% for rate_data in hotel_data.1.SPGCP.rates %}
 										<li>
 											<span class="date">
 												{{ rate_data.date|date:"M j (D)" }}</span>
@@ -111,12 +118,15 @@
 										</li>
 									{% endfor %}
 									</ol>
+									<p>
+										<a href="https://www.starwoodhotels.com/preferredguest/booking/cash_points/rates.html?arrivalDate={{ hotel_data.1.SPGCP.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPGCP.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPGCP&amp;numberOfAdults=2&amp;numberOfRooms=1">book it</a> *
+									</p>
 									{% endif %}
 									
 									{% if hotel_data.1.SPG %}
 									<h3>Points</h3>
 									<ol class="availability_info">
-									{% for rate_data in hotel_data.1.SPG %}
+									{% for rate_data in hotel_data.1.SPG.rates %}
 										<li>
 											<span class="date">
 												{{ rate_data.date|date:"M j (D)" }}</span>
@@ -125,6 +135,9 @@
 										</li>
 									{% endfor %}
 									</ol>
+									<p>
+										<a href="https://www.starwoodhotels.com/preferredguest/booking/points/rates.html?arrivalDate={{ hotel_data.1.SPG.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPG.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPG{{ hotel_data.0.category }}&amp;numberOfAdults=2&amp;numberOfRooms=1">book it</a> *
+									</p>
 									{% endif %}
 								
 									<div class="clear"></div>

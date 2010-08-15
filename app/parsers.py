@@ -32,6 +32,21 @@ class StarwoodParser(webapp.RequestHandler):
 	def is_spg_points_rate(ratecode):
 		import re
 		return re.match('SPG[1-7]', ratecode) is not None
+		
+		
+	@staticmethod
+	def parse_currency(hotel_id=None):
+		if hotel_id:
+			starwood_url = "http://www.starwoodhotels.com/corporate/checkAvail.do?propertyId=%s&ratePlan=%s" % (hotel_id, 'RACK')
+			response = urlfetch.fetch(url=starwood_url, deadline=10)
+			if response and response.status_code == 200:
+				try:
+					return simplejson.loads(response.content)['data']['currencyCode']
+				except:
+					pass
+		
+		return None
+		
 	
 	@staticmethod
 	def parse_availability(hotel_id, start_date, end_date=None, ratecode='SPGCP'):

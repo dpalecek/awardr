@@ -50,7 +50,6 @@ handlers:
 
 - url: /(.*)
   script: app/views.py
-  login: admin  
 
 - url: /(.*)
   script: app/views.py

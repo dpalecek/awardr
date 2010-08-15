@@ -24,10 +24,19 @@
 #search_form_container form#search_form input,
 #search_form_container form#search_form select {
 	font-size:					16px;
+	display:					inline-block;
+	margin:						0 2px;
 }
 
 #search_form_container form#search_form input#field_where {
 	width:						240px;
+	padding:					2px 4px;
+}
+
+#search_form_container form#search_form #nights_text {
+	display:					inline-block;
+	width:						68px;
+	text-align:					left;
 }
 
 form#search_form input#field_submit {
@@ -144,6 +153,9 @@ form#search_form input#field_submit:active
 	display:					block;
 	width:						85px;
 	height:						57px;
+	border-radius:				6px;
+	-moz-border-radius:			6px;
+	-webkit-border-radius:		6px;
 }
 
 #nearest_hotels_container ol.hotels_list li .hotel_info {
@@ -179,9 +191,11 @@ ol.availability_info li {
 	margin:						0 4px 0 0;
 	background:					#F8FFEF;
 	font-size:					9px;
-	border:						1px solid #666;
 	padding:					4px;
 	width:						70px;
+	border-radius:				4px;
+	-moz-border-radius:			4px;
+	-webkit-border-radius:		4px;
 }
 
 ol.availability_info li span {

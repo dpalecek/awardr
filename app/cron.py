@@ -177,12 +177,43 @@ class CronExpireAvailability(webapp.RequestHandler):
 		for p in past_dates:
 			self.response.out.write("\t%s\n" % p)
 
-		db.delete(past_dates)		
+		db.delete(past_dates)
 		
+		
+		
+class CronRefreshHotelInfo(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		try:
+			hotel_id = int(self.request.get('hotel_id'))
+		except:
+			hotel_id = None
+		
+		hotels = StarwoodProperty.all()
+		if hotel_id:
+			hotel = hotels.filter('id =', hotel_id).get()
+		else:
+			logging.info(hotels.count())
+			hotel = hotels.filter('currency =', None).get() #order('last_refreshed').get()
+		
+		if hotel:
+			info = StarwoodParser.parse(hotel.id)
+			'''
+			for d in ['category', 'image_url', ]
+			category = info.get('category')
+			if category:
+				hotel.category = category
+			phone = info.get('phone')
+			'''
+			
+		self.response.out.write('%s' % parsed)
+	
 
 
 def main():
 	ROUTES = [
+		('/cron/refresh-hotel', CronRefreshHotelInfo),
 		('/cron/expire', CronExpireAvailability),
 		('/cron/availability', HotelAvailabilityStarter),
 		('/cron/directory/(.*)', FetchDirectory),

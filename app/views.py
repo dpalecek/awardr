@@ -28,7 +28,8 @@ logging.getLogger().setLevel(logging.DEBUG)
 template.register_template_library('app.filters')
 
 
-
+MAX_HOTELS_RESULTS = 10
+MAX_HOTELS_DISTANCE = 100 * 1609.344 # miles to meters
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
 
 
@@ -80,7 +81,7 @@ class SearchView(webapp.RequestHandler):
 		except:
 			day = today.day
 		
-		start_date = datetime.date(year, month, day)
+		start_date = max(datetime.date(year, month, day), today)
 		
 		
 		where = self.request.get('where', default_value='').strip()
@@ -95,7 +96,8 @@ class SearchView(webapp.RequestHandler):
 		if geo_loc:
 			nearest_hotels = StarwoodProperty.proximity_fetch( \
 						StarwoodProperty.all().filter('location != ', 'NULL'),
-						geo_loc, max_results=10, max_distance=100000) #62 miles
+						geo_loc, max_results=MAX_HOTELS_RESULTS,
+						max_distance=MAX_HOTELS_DISTANCE)
 		else:
 			nearest_hotels = []
 			
@@ -113,9 +115,10 @@ class SearchView(webapp.RequestHandler):
 					rates_data = {}
 					for avail in avail_dict[hotel.id]:
 						if avail.ratecode == 'SPGCP':
-							rates_data['SPGCP'] = avail.expand(nights)
+							rate_key = 'SPGCP'
 						else:
-							rates_data['SPG'] = avail.expand(nights)
+							rate_key = 'SPG'
+						rates_data[rate_key] = avail.expand(nights)
 					hotels_tuple[0].append((hotel, rates_data))
 				else:
 					hotels_tuple[1].append(hotel)
@@ -123,7 +126,7 @@ class SearchView(webapp.RequestHandler):
 			logging.info(hotels_tuple)
 		
 		template_values = { \
-			'user_year': year, 'user_month': month, 'user_day': day,
+			'start_date': start_date,
 			'days': xrange(1,32), 'months': MONTHS,
 			'years': xrange(today.year, today.year + 3),
 			'nights_range': xrange(1,6),
@@ -258,7 +261,7 @@ class RateLookupView(webapp.RequestHandler):
 			if night:
 				template_values['currency_code'] = avail_data['currency_code']
 				template_values['rate'] = night['rate']
-				template_values['points'] = night['points']
+				template_values['points'] = night['pts']
 
 		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
 								template_values))

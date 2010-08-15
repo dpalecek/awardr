@@ -1,5 +1,14 @@
 $(document).ready(
 	function() {
+		var nights_select = $("select#field_nights");
+		var nights_text = $("#nights_text");
+		nights_select.change(function(event) {
+			nights_text.text((parseInt(nights_select.val()) > 1) ? "nights." : "night.");
+		});
+		
+		
+		
+		
 		var map_icons_base = "http://www.google.com/intl/en_us/mapfiles/ms/micons/";
 		var user_marker_image_url = "http://maps.google.com/mapfiles/ms/micons/man.png";
 
