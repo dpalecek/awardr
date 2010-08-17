@@ -4,7 +4,7 @@ CATEGORY_AWARD_CHOICES = {
 	'cash_points': {
 		1: {'points': 1200, 'cash': 25,},
 		2: {'points': 1600, 'cash': 30,},
-		3: {'points': 4000, 'cash': 45,},
+		3: {'points': 2800, 'cash': 45,},
 		4: {'points': 4000, 'cash': 60,},
 		5: {'points': 4800, 'cash': 90,},
 		6: {'points': 8000, 'cash': 150,},
