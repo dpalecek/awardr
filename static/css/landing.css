@@ -1,23 +1,32 @@
 p#intro {
-	text-align:				center;
-	font-size:				14px;
-	margin:					10px 0 20px;
-	color:					#444;
-	padding:				10px;
-	background:				#fffadb;
-	font-weight:			bold;
+	background:					#FFFADB;
+	display:					block;
+	border-radius:				4px;
+	-moz-border-radius:			4px;
+	-webkit-border-radius:		4px;
+	box-shadow:					0 0 4px #aaa;
+	-moz-box-shadow:			0 0 4px #aaa;
+	-webkit-box-shadow:			0 0 4px #aaa;
+	padding:					9px 10px;
+	text-align:					center;
+	font-size:					16px;
+	margin:						20px;
 }
 
 p#more_intro {
 	text-align:				center;
 	font-size:				14px;
-	margin:					10px 0;
-	color:					#222;
-	padding:				10px;
+	margin:					60px 0 20px;
+	color:					#555;
 }
 
 p#more_intro a {
 	font-weight:			bold;
+}
+
+form#landing_form {
+	display:				block;
+	margin:					30px 0;
 }
 
 form#landing_form label {
@@ -61,7 +70,6 @@ form#landing_form select#field_nights {
 }
 
 form#landing_form input#landing_form_submit {
-	font-size:				22px;
 	margin:					10px auto;
 	display:				block;
 }

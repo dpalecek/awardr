@@ -1,0 +1,60 @@
+input.fancybutton {
+	font-family: "Lucida Grande", Lucida, Arial, sans_serif;
+	background: url('/static2/images/button_bg.png') repeat-x bottom left;
+	margin: 0;
+	width: auto;
+	overflow: visible;
+	display: inline-block;
+	cursor: pointer;
+	border-style: solid;
+	font-weight: bold;
+	border-radius: 6px;
+	-moz-border-radius: 6px;
+	-webkit-border-radius: 6px;
+	/*font-size: 18px;*/
+	font-size: 14px;
+	line-height: 21.6px;
+	/*padding: 5px 18px;*/
+	padding: 4px 12px;
+	border-width: 1px;
+	background-color: #444444;
+	background: -webkit-gradient(linear, left top, left bottom, from(#989898), to(#4f4f4f), color-stop(10%, #6a6a6a), color-stop(50%, #3d3d3d), color-stop(50%, #353535));
+	background: -moz-linear-gradient(left top, left bottom, from(#989898), to(#4f4f4f), color-stop(10%, #6a6a6a), color-stop(50%, #3d3d3d), color-stop(50%, #353535));
+	border-color: #1e1e1e;
+	text-shadow: #040404 0px 1px 1px;
+	color: white;
+	margin: 0 2px;
+	vertical-align: middle;
+}
+
+input.fancybutton {
+	background-color: #0059b7;
+	background: -webkit-gradient(linear, left top, left bottom, from(#3680ce), to(#1e4b7a));
+	background: -moz-linear-gradient(left top, left bottom, from(#3680ce), to(#1e4b7a));
+	border-color: #153456;
+	text-shadow: #001b38 0px 1px 1px;
+	color: white;
+}
+
+input.fancybutton::-moz-focus-inner {
+	border: none;
+	padding: 0
+}
+
+input.fancybutton:hover,
+input.fancybutton:focus {
+	background-color: #0051a8;
+	background: -webkit-gradient(linear, left top, left bottom, from(#3077c4), to(#1b436e));
+	background: -moz-linear-gradient(left top, left bottom, from(#3077c4), to(#1b436e));
+	border-color: #122d4a;
+	text-shadow: #001429 0px 1px 1px;
+	color: white
+}
+
+input.fancybutton:active {
+	background: 0 to(#27629e), color-stop(85%,#205082), color-stop(40%,#205082));
+	background-color: #004a98;
+	border-color: #0f253d;
+	color: #FFF;
+	text-shadow: #000c18 0 -1px -1px;
+}

@@ -33,6 +33,28 @@ MONTHS_DELTA = 12
 YEARS_FUTURE = 1
 
 
+class LocationlessHotels(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		email_address = "mshafrir@gmail.com"
+		
+		hotels = StarwoodProperty.all().filter('location =', None)
+		
+		if hotels.count():
+			body = "Hotels without a location.\n"
+			for hotel in hotels:
+				body = "%s\n%s" % (body, hotel)
+			
+			body = "%s\n\n%s" % (body, "https://appengine.google.com/datastore/explorer?submitted=1&app_id=awardr&viewby=gql&kind=StarwoodProperty&query=SELECT+*+FROM+StarwoodProperty+WHERE+location+%3D+NULL")
+			
+			self.response.out.write(body)
+			mail.send_mail(email_address, email_address, \
+							"Awardpad: Hotels without a location.", body)
+			
+		else:
+			self.response.out.write("All hotels with a location.")
+			
+		
 class GeocodeProperty(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
@@ -213,6 +235,7 @@ class CronRefreshHotelInfo(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
+		('/cron/locationless', LocationlessHotels),
 		('/cron/refresh-hotel', CronRefreshHotelInfo),
 		('/cron/expire', CronExpireAvailability),
 		('/cron/availability', HotelAvailabilityStarter),

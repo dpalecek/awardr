@@ -30,7 +30,7 @@
 						<label for="field_where">
 							near
 							<input type="text" name="where" id="field_where"
-						 		value="{{ where }}" /></label>,
+						 		value="{{ where|escape }}" /></label>,
 						
 						<label for="field_month">
 							arriving
@@ -73,7 +73,7 @@
 							{% ifequal user_nights 1 %}night{% else %}nights{% endifequal %}.
 						</span></label>
 						
-						<input type="submit" value="Search" id="field_submit" />
+						<input type="submit" value="Search" id="field_submit" class="fancybutton" />
 					</form>
 				</div>
 				<div class="clear"></div>
@@ -88,25 +88,48 @@
 							<ol class="hotels_list" id="available_hotels_list">
 							{% for hotel_data in hotels_tuple.0 %}
 								<li class="hotel {% cycle odd,even %} {% if forloop.first %}first{%endif%}">
-									<img src="{{ hotel_data.0.image_url }}"
-										class="hotel_image tiny"
-									 	alt="{{ hotel_data.0.name }}" />
+									<div class="hotel_sidebar">
+										<img src="{{ hotel_data.0.image_url }}"
+											class="hotel_image tiny"
+										 	alt="{{ hotel_data.0.name }}" />
+									</div>
 								
 									<div class="hotel_info">
-										<span class="hotel_name">{{ hotel_data.0.name }}</span>
-										{{ hotel_data.0.html_address }}
+										<h3 class="hotel_name">{{ hotel_data.0.name }}</h3>
+										
+										{{ hotel_data.0.html_short_address }} -
+										<span class="category">Category {{ hotel_data.0.category }}</span>
 									</div>
 									
-									{% if hotel_data.1.SPGCP %}
-									<h3>Cash and Points</h3>
-									<ol class="availability_info">
+									<p class="bookit">
+										Book with 
+										{% if hotel_data.1.SPG and not hotel_data.1.SPGCP %}
+										<a href="https://www.starwoodhotels.com/preferredguest/booking/points/rates.html?arrivalDate={{ hotel_data.1.SPG.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPG.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPG{{ hotel_data.0.category }}&amp;numberOfAdults=2&amp;numberOfRooms=1">
+											{{ hotel_data.1.SPG.totals.points }} points</a>
+										{% endif %}
+										
+										{% if not hotel_data.1.SPG and hotel_data.1.SPGCP %}
+										<a href="https://www.starwoodhotels.com/preferredguest/booking/cash_points/rates.html?arrivalDate={{ hotel_data.1.SPGCP.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPGCP.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPGCP&amp;numberOfAdults=2&amp;numberOfRooms=1">
+											{{ hotel_data.1.SPGCP.totals.points }} points and
+											${{ hotel_data.1.SPGCP.totals.cash }}</a>
+										{% endif %}
+										
+										{% if hotel_data.1.SPG and hotel_data.1.SPGCP %}
+										<a href="https://www.starwoodhotels.com/preferredguest/booking/points/rates.html?arrivalDate={{ hotel_data.1.SPG.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPG.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPG{{ hotel_data.0.category }}&amp;numberOfAdults=2&amp;numberOfRooms=1">
+											{{ hotel_data.1.SPG.totals.points }} points</a>
+										<br />or
+										<a href="https://www.starwoodhotels.com/preferredguest/booking/cash_points/rates.html?arrivalDate={{ hotel_data.1.SPGCP.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPGCP.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPGCP&amp;numberOfAdults=2&amp;numberOfRooms=1">
+											{{ hotel_data.1.SPGCP.totals.points }} points and
+											${{ hotel_data.1.SPGCP.totals.cash }}</a>
+										{% endif %}
+									</p>
+									
 									{% comment %}
-										<li>
-											<span class="date">8/22</span>
-											<span class="points">4000 points</span>
-											<span class="cash">$40</span>
-										</li>							
-									{% endcomment %}
+									{% if hotel_data.1.SPGCP %}
+									<h4 class="ratetype">Cash and Points</h4>
+									<p>points: {{ hotel_data.1.SPGCP.totals.points }}</p>
+									<p>cash: {{ hotel_data.1.SPGCP.totals.cash }}</p>
+									<ol class="availability_info">
 									{% for rate_data in hotel_data.1.SPGCP.rates %}
 										<li>
 											<span class="date">
@@ -122,9 +145,15 @@
 										<a href="https://www.starwoodhotels.com/preferredguest/booking/cash_points/rates.html?arrivalDate={{ hotel_data.1.SPGCP.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPGCP.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPGCP&amp;numberOfAdults=2&amp;numberOfRooms=1">book it</a> *
 									</p>
 									{% endif %}
+									{% endcomment %}
 									
+									{% comment %}
 									{% if hotel_data.1.SPG %}
-									<h3>Points</h3>
+									<h4 class="ratetype">Points</h4>
+									<p class="booking">
+										Points: {{ hotel_data.1.SPG.totals.points }}</p>
+									
+									
 									<ol class="availability_info">
 									{% for rate_data in hotel_data.1.SPG.rates %}
 										<li>
@@ -135,17 +164,19 @@
 										</li>
 									{% endfor %}
 									</ol>
+									
 									<p>
 										<a href="https://www.starwoodhotels.com/preferredguest/booking/points/rates.html?arrivalDate={{ hotel_data.1.SPG.check_in|date:"Y-m-d" }}&amp;departureDate={{ hotel_data.1.SPG.check_out|date:"Y-m-d" }}&amp;propertyID={{ hotel_data.0.id }}&amp;rateCategory=SPG{{ hotel_data.0.category }}&amp;numberOfAdults=2&amp;numberOfRooms=1">book it</a> *
 									</p>
 									{% endif %}
+									{% endcomment %}
 								
 									<div class="clear"></div>
 								</li>
 							{% endfor %}
 							</ol>
 						{% else %}
-							<p>No hotels found.</p>
+							<p id="no_hotels_found">No hotels found.</p>
 						{% endif %}
 						
 						
@@ -156,13 +187,16 @@
 							<ol class="hotels_list" id="unavailable_hotels_list">
 							{% for hotel in hotels_tuple.1 %}
 								<li class="hotel {% cycle odd,even %} {% if forloop.first %}first{%endif%}">
-									<img src="{{ hotel.image_url }}" class="hotel_image tiny"
-									 	alt="{{ hotel.name }}" />
+									<div class="hotel_sidebar">
+										<img src="{{ hotel.image_url }}"
+											class="hotel_image tiny"
+									 		alt="{{ hotel.name }}" />
+									</div>
 								
 									<div class="hotel_info">
-										<span class="hotel_name">{{ hotel.name }}</span>
-
-										{{ hotel.html_address }}
+										<h3 class="hotel_name">{{ hotel.name }}</h3>
+										
+										{{ hotel.html_short_address }}
 									</div>
 								
 									<div class="clear"></div>

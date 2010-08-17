@@ -35,12 +35,19 @@ handlers:
   script: app/shell.py
   login: admin
   
+- url: /stats.*
+  script: $PYTHON_LIB/google/appengine/ext/appstats/ui.py
+  
 - url: /static2
   static_dir: static
   
 - url: /favicon.ico
   static_files: static/images/favicon.ico
   upload: static/images/favicon.ico
+
+- url: /robots.txt
+  static_files: static/site/robots.txt
+  upload: static/site/robots.txt
 
 - url: /rate-lookup
   script: app/views.py

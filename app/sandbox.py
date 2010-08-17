@@ -52,16 +52,31 @@ class UpdateLocations(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
 		
-		offset = int(self.request.get('offset', default_value=0))
-		limit = int(self.request.get('limit', default_value=100))
-		
-		for hotel in StarwoodProperty.all().fetch(limit, offset):
-			if hotel.location and not hotel.location_geocells:
-				self.response.out.write("Updated location for %s.\n" % (hotel))
-				hotel.update_location()
-				hotel.put()
+		try:
+			hotel_id = int(self.request.get('id', default_value=0))
+		except:
+			hotel_id = 0
 			
-		self.response.out.write("Updated locations.\n")
+		if hotel_id:
+			msg = "\nHotel location_geocells %s:\n%s\n"
+			hotel = StarwoodProperty.all().filter('id =', hotel_id).get()
+			self.response.out.write("Hotel: %s\n" % (hotel))
+			self.response.out.write(msg % ("before", hotel.location_geocells))
+			hotel.update_location()
+			hotel.put()
+			self.response.out.write(msg % ("after", hotel.location_geocells))
+			
+		else:
+			offset = int(self.request.get('offset', default_value=0))
+			limit = int(self.request.get('limit', default_value=100))
+		
+			for hotel in StarwoodProperty.all().fetch(limit, offset):
+				if hotel.location and not hotel.location_geocells:
+					self.response.out.write("Updated location for %s.\n" % (hotel))
+					hotel.update_location()
+					hotel.put()
+			
+		self.response.out.write("\nUpdated locations.\n")
 
 
 class ShowAvailability(webapp.RequestHandler):

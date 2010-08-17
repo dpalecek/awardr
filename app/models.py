@@ -1,3 +1,9 @@
+from __future__ import division
+
+import urllib
+import random
+import datetime
+
 from google.appengine.ext import db
 from google.appengine.api import memcache
 from google.appengine.api import urlfetch
@@ -5,10 +11,6 @@ from google.appengine.api import urlfetch
 from app.parsers import StarwoodParser
 import app.helper as helper
 import app.resources as resources
-
-import urllib
-import random
-import datetime
 
 import simplejson
 
@@ -124,6 +126,9 @@ class StarwoodProperty(geomodel.GeoModel):
 					% (self.address, self.city, self.state, self.country, self.postal_code)
 		
 		return "<address>\n%s</address>\n" % address_contents
+	
+	def html_short_address(self):
+		return "<address>%s, %s</address>\n" % (self.city, self.country)
 	
 	def encoded_full_address(self, with_address2=True):
 		return self.full_address(encoded=True, with_address2=with_address2)
@@ -251,6 +256,7 @@ class StarwoodDateAvailability(db.Model):
 		
 	def expand(self, nights_count=0):
 		rate_data = []
+		points = cash = 0
 		for night in xrange(nights_count):
 			date = self.date + relativedelta(days=night)
 			if self.ratecode == 'SPGCP':
@@ -258,6 +264,12 @@ class StarwoodDateAvailability(db.Model):
 			elif self.ratecode.startswith('SPG'):
 				rate = StarwoodParser.mod_spg_points(self.hotel.category, date)
 			rate_data.append({'date': date, 'rate': rate})
+			points += rate.get('points', 0)
+			cash += rate.get('cash', 0)
+		
+		# 5th night free in category 3 and up
+		if nights_count == 5 and self.hotel.category >= 3 and StarwoodParser.is_spg_points_rate(self.ratecode):
+			points = int(points * 4 / 5)
 			
 		return {'check_in': self.date, 'check_out': self.date + relativedelta(days=nights_count), \
-					'rates': rate_data}
+					'rates': rate_data, 'totals': {'points': points, 'cash': cash}}

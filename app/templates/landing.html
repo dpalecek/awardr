@@ -5,36 +5,9 @@
 {% endblock %}
 
 {% block body_content %}
-			{% if not launched %}
-			<div class="prefix_2 grid_12 suffix_2">
-				<p id="intro">
-					Awardpad will be launching soon to help you make the most of your
-					Starwood experience.
-				</p>
-				<p id="more_intro">
-					In the meantime, try out the <a href="/rate-lookup">Starwood rate lookup tool</a>.
-				</p>
-			</div>
-			<div class="clear"></div>
-			
-			{% else %}
 			<div class="prefix_1 grid_14 suffix_1">
 				<p id="intro">
-					Have Starwood points burning a hole in your pocket?  Find the best
-					hotels and resorts all over the world to use
-
-					{% if hotel %}
-					them, such as the <span class="bold">{{ hotels.0.name }}</span> in
-					{% ifequal hotels.0.country "United States" %}
-					{{ hotels.0.city }}, {{ hotels.0.state }}.
-					{% else %}
-					{{ hotels.0.city }}, {{ hotels.0.country }}.
-					{% endifequal %}
-
-					{% else %}
-					them.
-					
-					{% endif %}
+					Find Starwood award availability anywhere in the world in seconds.
 				</p>
 			</div>
 			<div class="clear"></div>
@@ -47,7 +20,7 @@
 					<div class="grid_6 suffix_3">
 						<input type="text" name="where" id="field_where"
 						 	class="field" />
-						<p class="example">(e.g. France, 10001, Los Angeles, CA)</p>
+						<p class="example">(e.g. Tokyo, 10001, Los Angeles, CA)</p>
 					</div>
 					<div class="clear"></div>
 				</div>
@@ -114,8 +87,15 @@
 				
 				<div class="grid_16">
 					<input type="submit" value="Search" id="landing_form_submit"
-					 		class="button3d"/>
+					 		 class="fancybutton" />
 				</div>
 			</form>
-			{% endif %}
+			<div class="clear"></div>
+			
+			<div class="prefix_1 grid_14 suffix_1">
+				<p id="more_intro">
+					Also, try out the <a href="/rate-lookup">Starwood rate lookup tool</a>.
+				</p>
+			</div>
+			<div class="clear"></div>
 {% endblock %}

@@ -18,13 +18,19 @@ $(document).ready(
 			var hotel_markers = [];
 			
 			var create_hotel_marker = function(hotel, i) {
+				var icon_number = (i + 1).toString();
+				console.log(icon_number);
+				if (i + 1 < 10) {
+					icon_number = "0" + icon_number;
+				}
+				console.log(icon_number);
+				
 				var hotel_marker = new google.maps.Marker({
 					position: new google.maps.LatLng(hotel['coord']['lat'], hotel['coord']['lng']),
 					map: hotels_map,
 					title: hotel.name,
-					//icon: "http://maps.google.com/mapfiles/ms/micons/man.png",
-					//icon: "/static/images/numeric_icons/off_icons/red" + (i + 1) + ".png",
-					zIndex: 0
+					icon: "/static2/images/icons/darkblue" + icon_number + ".png",
+					zIndex: (10 - i)
 				});
 				
 				return hotel_marker;
@@ -162,8 +168,7 @@ $(document).ready(
 				if (!loaded) {
 					$.each(nearest_hotels, function(i) {
 						var hotel = this;
-						var hotel_marker = create_hotel_marker(hotel);
-						hotel_markers.push(hotel_marker);
+						hotel_markers.push(create_hotel_marker(hotel, i));
 					});
 					
 					if (user_coord) {
@@ -182,6 +187,10 @@ $(document).ready(
 			if (google.loader.ClientLocation) {
 				//console.log(google.loader.ClientLocation.latitude);
 			}
+			
+			$(".hotel_name").click(function(event) {
+				
+			});
 		});
 	}
 );

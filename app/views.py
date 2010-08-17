@@ -28,8 +28,9 @@ logging.getLogger().setLevel(logging.DEBUG)
 template.register_template_library('app.filters')
 
 
-MAX_HOTELS_RESULTS = 10
-MAX_HOTELS_DISTANCE = 100 * 1609.344 # miles to meters
+MILES_TO_METERS = 1609.344 # miles to meters
+MAX_HOTELS_RESULTS = 20
+MAX_HOTELS_DISTANCE = 100 * MILES_TO_METERS
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
 
 
@@ -45,6 +46,7 @@ def geocoder_service(address):
 			pass
 
 	return None
+
 
 '''
 cash & points
@@ -123,7 +125,6 @@ class SearchView(webapp.RequestHandler):
 				else:
 					hotels_tuple[1].append(hotel)
 					
-			logging.info(hotels_tuple)
 		
 		template_values = { \
 			'start_date': start_date,
@@ -142,11 +143,8 @@ class SearchView(webapp.RequestHandler):
 		
 class LandingView(webapp.RequestHandler):
 	def get(self):
-		launched = os.environ.get('SERVER_SOFTWARE').startswith('Development') or self.request.get('launched', default_value=False) == "true"
-		
 		today = datetime.date.today()
 		start_day = today + relativedelta(months=1)
-		
 
 		all_hotels = StarwoodProperty.all()
 		if all_hotels and all_hotels.count():
@@ -156,8 +154,7 @@ class LandingView(webapp.RequestHandler):
 		
 		template_values = {'days': xrange(1,32), 'months': MONTHS, \
 							'years': xrange(today.year, today.year + 3),
-							'start_day': start_day,	'hotel': hotel,
-							'launched': launched}
+							'start_day': start_day,	'hotel': hotel}
 		self.response.out.write(template.render(helper.get_template_path("landing"),
 								template_values))
 		
