@@ -1,6 +1,7 @@
 import datetime
 import time
 import random
+from collections import defaultdict
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -31,8 +32,7 @@ TASK_NAME_PROCESS_HOTEL = "starwood-hotel-%d-%d"
 TASK_QUEUE_FETCH_AVAILABILITY = "fetch-starwood-availability"
 TASK_NAME_FETCH_AVAILABILITY = "fetch-starwood-availability-%d-%s-%04d%02d-%02d-%d" #hotel_id, ratecode, start_date, delta
 DATE_FORMAT = "%04d-%02d"
-MONTHS_DELTA = 12
-YEARS_FUTURE = 1
+MONTHS_DELTA = 18
 
 
 class LocationlessHotels(webapp.RequestHandler):
@@ -102,8 +102,7 @@ class FetchDirectory(webapp.RequestHandler):
 		if directory_response and directory_response.status_code == 200:
 			soup = BeautifulSoup(directory_response.content)
 			for link in [info_div.find('a', 'propertyName') for info_div in soup.findAll('div', 'propertyInfo') if is_valid_property(info_div)]:
-				hotel_url = link['href']
-				logging.info("hotel_url: %s" % hotel_url)
+				hotel_url = link.get('href')
 				directory_hotels[int(hotel_url.split('propertyID=')[1])] = str(hotel_url.split('/')[1]) #a['href'].split('?')[1].split('&')
 		
 		diff_ids = list(frozenset(directory_hotels.keys()) - frozenset([hotel.id for hotel in StarwoodProperty.all()]))
@@ -134,9 +133,9 @@ class FetchDirectory(webapp.RequestHandler):
 
 class HotelAvailabilityStarter(webapp.RequestHandler):
 	def get(self):
-		months_delta = int(self.request.get('months', 1))
-		
 		self.response.headers['Content-Type'] = 'text/plain'
+		
+		months_delta = int(self.request.get('months', 1))
 		
 		try:
 			hotel_id = int(self.request.get('hotel_id'))
@@ -153,12 +152,14 @@ class HotelAvailabilityStarter(webapp.RequestHandler):
 			self.response.out.write("Did not get a hotel.\n")
 			
 		else:
+			logging.info("Getting availability for %s.\n" % hotel)
+			
 			self.response.out.write("Got hotel %s [%s].\n" % (hotel.name, hotel.id))
 			added_task_count = 0
 			
-			for ratecode in ['SPGCP', 'SPG%d' % (hotel.category)]:
+			for ratecode in ('SPGCP', 'SPG%d' % (hotel.category)):
 				start_date = datetime.date.today()
-				end_date = start_date + relativedelta(years=YEARS_FUTURE)
+				end_date = start_date + relativedelta(months=MONTHS_DELTA)
 				
 				while start_date < end_date:
 					task = taskqueue.Task(url='/tasks/availability/fetch', \
@@ -182,8 +183,9 @@ class HotelAvailabilityStarter(webapp.RequestHandler):
 						self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" \
 												% (task.name, TASK_QUEUE_FETCH_AVAILABILITY))
 												
-					start_date += relativedelta(months=MONTHS_DELTA)
+					start_date += relativedelta(months=MONTHS_DELTA)					
 			
+			hotel.last_checked = datetime.datetime.now()
 			hotel.put()
 
 
@@ -218,7 +220,6 @@ class CronRefreshHotelInfo(webapp.RequestHandler):
 		if hotel_id:
 			hotel = hotels.filter('id =', hotel_id).get()
 		else:
-			logging.info(hotels.count())
 			hotel = hotels.filter('currency =', None).get() #order('last_refreshed').get()
 		
 		if hotel:
@@ -232,11 +233,55 @@ class CronRefreshHotelInfo(webapp.RequestHandler):
 			'''
 			
 		self.response.out.write('%s' % parsed)
-	
+
+
+
+class RemoveDuplicateAvailabilities(webapp.RequestHandler):
+	def get(self):
+		is_cron = bool(self.request.get('X-AppEngine-Cron', False))
+		writer = (self.response.out.write, logging.info)[is_cron]
+
+		self.response.headers['Content-Type'] = 'text/plain'
+		writer("Clean out the availability dupes!\n\n")
+
+		avails_to_del = []
+		avail_map = defaultdict(list)
+
+		try:
+			limit = int(self.request.get('limit', 100))
+		except:
+			limit = 100
+
+		dupes = 0
+		for avail in StarwoodDateAvailability.all().order('date'):
+			key = (avail.hotel.id, avail.ratecode, avail.date)
+			avail_map[key].append(avail)
+
+			if len(avail_map[key]) == 2:
+				dupes += 2
+			if len(avail_map[key]) > 2:
+				dupes += 1
+
+			if dupes >= limit:
+				break
+
+		nights_compare = lambda avail1, avail2: len(avail1.nights) - len(avail2.nights)
+
+		for key, avails in ((key, avails) for key, avails in avail_map.iteritems() if len(avails) > 1):
+			avails.sort(cmp=nights_compare)
+			if not is_cron:
+				writer("%s: Keeping %s, deleting %s and %d others.\n" % (key, avails[0].nights, avails[1].nights, len(avails) - 2))
+			avails_to_del.extend(avails[1:])
+
+		if is_cron or bool(self.request.get('persist', False)):
+			writer("\nDeleting %d entities." % max(len(avails_to_del), 500))
+			db.delete(avails_to_del[:500])	
+
 
 
 def main():
 	ROUTES = [
+		('/cron/remove-duplicate-availabilities', RemoveDuplicateAvailabilities),
 		('/cron/locationless', LocationlessHotels),
 		('/cron/refresh-hotel', CronRefreshHotelInfo),
 		('/cron/expire', CronExpireAvailability),
