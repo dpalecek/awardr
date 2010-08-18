@@ -19,4 +19,8 @@ def remove_accents(str):
 	return unicodedata.normalize('NFKD', unicode(str)).encode('ASCII', 'ignore')	
 	
 def str_to_date(s):
-	return date(*(datetime.strptime("%s-01" % (s), "%Y-%m-%d").timetuple()[:3]))
+	date_format = ("%s-01", "%s")[len(s.split('-')) == 3]
+	return date(*(datetime.strptime(date_format % s, "%Y-%m-%d").timetuple()[:3]))
+	
+def date_to_str(d):
+	return d.strftime("%Y-%m-%d")
