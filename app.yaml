@@ -61,3 +61,10 @@ handlers:
 - url: /(.*)
   script: app/views.py
   login: admin
+  
+  
+  
+admin_console:
+  pages:
+  - name: Shell
+    url: /shell
