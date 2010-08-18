@@ -64,17 +64,17 @@ class FetchStarwoodAvailability(webapp.RequestHandler):
 			
 		#year_month = self.request.get('date', default_value='')
 		start_date = helper.str_to_date(self.request.get('date'))
-		months_delta = int(self.request.get('months_delta', default_value=1)) - 1
-		end_date = start_date + relativedelta(months=+months_delta)
+		months_delta = int(self.request.get('months_delta', default_value=1))
+		end_date = start_date + relativedelta(months=months_delta)
 		ratecode = self.request.get('ratecode', default_value='')
 			
 		availability_data = None
 		if hotel_id and start_date and ratecode:
 			try:
 				availability_data = StarwoodParser.parse_availability( \
-										hotel_id=hotel_id, \
-										start_date=YEAR_MONTH_FORMAT % (start_date.year, start_date.month), \
-										end_date=YEAR_MONTH_FORMAT % (end_date.year, end_date.month), \
+										hotel_id=hotel_id,
+										start_date=YEAR_MONTH_FORMAT % (start_date.year, start_date.month),
+										end_date=YEAR_MONTH_FORMAT % (end_date.year, end_date.month),
 										ratecode=ratecode) \
 									.get('availability')
 			except:
@@ -83,40 +83,63 @@ class FetchStarwoodAvailability(webapp.RequestHandler):
 		if availability_data:
 			added_task_count = 0
 			
+			all_days = []
+			d = date.today() + relativedelta(days=0)
+			while d < end_date:
+				all_days.append(d)
+				d += relativedelta(days=1)
+			
 			for year in availability_data:
 				for month in availability_data[year]:
 					for day, nights_data in availability_data[year][month].iteritems():
 						availability_date = date(year=year, month=month, day=day)
+						if availability_date in all_days:
+							all_days.remove(availability_date)
 
-						task = taskqueue.Task(url='/tasks/availability/process', \
-												name=TASK_NAME_PROCESS_AVAILABILITY \
-														% (hotel_id, ratecode, availability_date.year, \
-															availability_date.month, availability_date.day, \
-															int(time.time())), \
-												method='GET', \
-												params={'hotel_id': hotel_id, 'ratecode': ratecode, \
-														'date': availability_date.strftime("%Y-%m-%d"), \
-														'nights': nights_data.keys()})
-
-						try:
-							task.add(TASK_QUEUE_PROCESS_AVAILABILITY)
-							self.response.out.write("Added task '%s' to task queue '%s'.\n" \
-													% (task.name, TASK_QUEUE_PROCESS_AVAILABILITY))
+						success = FetchStarwoodAvailability.enqueue_task( \
+										hotel_id=hotel_id, ratecode=ratecode,
+										day=availability_date, nights=nights_data.keys(),
+										writer=self.response.out.write)
+						if success:
 							added_task_count += 1
-						except TaskAlreadyExistsError:
-							self.response.out.write("Task '%s' already exists in task queue '%s'.\n" \
-													% (task.name, TASK_QUEUE_PROCESS_AVAILABILITY))
-						except TombstonedTaskError:
-							self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" \
-													% (task.name, TASK_QUEUE_PROCESS_AVAILABILITY))
 											
 			self.response.out.write("\nAdded %d tasks to the queue.\n" % (added_task_count))
+			
+			
+			# Delete the entities that don't have availability.
+			for day in all_days:
+				FetchStarwoodAvailability.enqueue_task(hotel_id=hotel_id, ratecode=ratecode, \
+														day=day, method='DELETE',
+														writer=self.response.out.write)
 
 		else:
 			self.response.out.write("Invalid request.")
 		
 
 class ProcessStarwoodAvailability(webapp.RequestHandler):
+	def delete(self):
+		try:
+			hotel_id = int(self.request.get('hotel_id', default_value=''))
+		except:
+			hotel_id = None
+
+		if hotel_id:
+			hotel = StarwoodProperty.get_by_id(hotel_id)
+		else:
+			hotel = None
+			
+		try:
+			day = helper.str_to_date(self.request.get('date'))
+		except:
+			day = None
+		
+		ratecode = self.request.get('ratecode', default_value='').strip()
+		
+		availability = StarwoodDateAvailability.lookup(hotel, day, ratecode)
+		if availability:
+			db.delete(availability)
+			
+		
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
 		
@@ -131,14 +154,14 @@ class ProcessStarwoodAvailability(webapp.RequestHandler):
 			hotel = None
 			
 		try:
-			day = date(*(datetime.strptime(self.request.get('date'), "%Y-%m-%d").timetuple()[:3]))
+			day = helper.str_to_date(self.request.get('date'))
 		except:
 			day = None
 			
 		ratecode = self.request.get('ratecode', default_value='').strip()
 		nights_list = [int(n) for n in self.request.get_all('nights')]
 
-		if hotel and day and ratecode and nights_list:
+		if hotel and day and ratecode:
 			dirty = True
 			
 			# lookup availability entity for hotel, day, and ratecode
@@ -173,7 +196,6 @@ class StarwoodPropertyProcesser(webapp.RequestHandler):
 			hotel_props = StarwoodParser.parse(prop_id)
 			if hotel_props:
 				hotel_props.update({'brand': brand})
-				logging.info("Property id %s => %s" % (prop_id, hotel_props))
 				self.response.out.write("Property id %s => %s\n\n" % (prop_id, hotel_props))
 
 				hotel = StarwoodProperty.create(hotel_props)
