@@ -26,7 +26,50 @@ from lib.geomodel import geomodel
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
+		
 
+class RemoveDuplicateHotelAvailabilities(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		try:
+			hotel_id = int(self.request.get('hotel_id', 0))
+		except:
+			hotel_id = 0
+			
+		if hotel_id:
+			hotel = StarwoodProperty.all().filter('id =', hotel_id).get()
+		else:
+			hotel = StarwoodProperty.random()
+			
+		self.response.out.write("Hotel: %s\n" % hotel)
+		
+		if hotel:
+			avails_to_del = []
+			avail_map = defaultdict(list)
+			
+			for avail in StarwoodDateAvailability.all().filter('hotel =', hotel):
+				avail_map[(avail.hotel.id, avail.ratecode, avail.date)].append(avail)
+				
+			nights_compare = lambda avail1, avail2: len(avail1.nights) - len(avail2.nights)
+			for avails in (avails for avails in avail_map.values() if len(avails) > 1):
+				avails.sort(cmp=nights_compare)
+				avails_to_del.extend(avails[1:])
+				
+			self.response.out.write("Found %d duplicates.\n" % len(avails_to_del))
+			
+			if bool(self.request.get("persist", False)):
+				self.response.out.write("Deleting duplicate entities.\n")
+				db.delete(avails_to_del[:500])
+			else:
+				self.response.out.write("Not deleting entities.\n")
+			
+			if bool(self.request.get("kickoff", False)):
+				response = urlfetch.fetch("http://www.awardpad.com/cron/availability?hotel_id=%d" % hotel.id)
+				self.response.out.write("\nKicked off availability update task.")
+			else:
+				self.response.out.write("\nDid not kick off availability update task.")
+			
 
 class FindDuplicateHotels(webapp.RequestHandler):
 	def get(self, param='phone'):
@@ -101,7 +144,7 @@ class ShowAvailability(webapp.RequestHandler):
 			for ratecode in ['SPGCP', 'SPG%d' % (hotel.category)]:
 				self.response.out.write("\n\nRatecode: %s\n" % (ratecode))
 				for avail in StarwoodDateAvailability.hotel_query(hotel=hotel).filter('ratecode =', ratecode):
-					self.response.out.write("\t%s\t=>\t%s\n" % (avail.date, [int(n) for n in avail.nights]))
+					self.response.out.write("\t[%s] %s\t=>\t%s\n" % (avail.key().name(), avail.date, [int(n) for n in avail.nights]))
 					
 
 
@@ -151,7 +194,6 @@ class ShowCountries(webapp.RequestHandler):
 		
 		country_keys = countries.keys()
 		country_keys.sort()
-		logging.info('%s' % country_keys)
 		for i, country in enumerate(country_keys):
 			if not resources.CURRENCIES.get(country):
 				self.response.out.write("%d. %s => %s\n" % (i + 1, country, countries[country]))
@@ -159,6 +201,7 @@ class ShowCountries(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
+		('/sandbox/remove-duplicate-hotel-availabilities', RemoveDuplicateHotelAvailabilities),
 		('/sandbox/countries', ShowCountries),
 		('/sandbox/availability', ShowAvailability),
 		('/sandbox/duplicates/(.*)', FindDuplicateHotels),
