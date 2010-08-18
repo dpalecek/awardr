@@ -89,8 +89,8 @@ class StarwoodProperty(geomodel.GeoModel):
 	
 	currency = db.StringProperty() #CURRENCY_CHOICES)
 	
-	last_checked = db.DateTimeProperty(required=True, auto_now=True)
-	last_refreshed = db.DateTimeProperty(required=True, auto_now=True, default=datetime.datetime.now())
+	last_checked = db.DateTimeProperty(auto_now=True)
+	last_refreshed = db.DateTimeProperty(auto_now=True, default=datetime.datetime.now())
 	
 	
 	def __str__(self):
@@ -100,7 +100,7 @@ class StarwoodProperty(geomodel.GeoModel):
 	def calc_key_name(id=None):
 		return (id and "starwood_hotel_%d" % (id)) or None
 	
-	def props(self):
+	def props(self, props_filter=None):
 		props = {'id': int(self.id), \
 					'name': helper.remove_accents(self.name), \
 					'category': int(self.category), \
@@ -114,7 +114,11 @@ class StarwoodProperty(geomodel.GeoModel):
 					'brand': str(self.brand), 'image_url': str(self.image_url)}
 		if self.location:
 			props['coord'] = {'lat': self.location.lat, 'lng': self.location.lon}
-		return props
+
+		if props_filter:
+			return dict((k,v) for k,v in props.iteritems() if k in props_filter)
+		else:
+			return props
 	
 	def html_address(self):
 		patterns = ["<span class=\"address_part\">%s</span>\n", \
@@ -261,16 +265,48 @@ class StarwoodDateAvailability(db.Model):
 		for night in xrange(nights_count):
 			date = self.date + relativedelta(days=night)
 			if self.ratecode == 'SPGCP':
-				rate = resources.CATEGORY_AWARD_CHOICES['cash_points'][self.hotel.category]
+				rate = resources.CATEGORY_AWARD_CHOICES['cash_points'].get(int(self.hotel.category))
 			elif StarwoodParser.is_spg_points_rate(self.ratecode):
 				rate = StarwoodParser.mod_spg_points(self.hotel.category, date)
-			rate_data.append({'date': date, 'rate': rate})
-			points += rate.get('points', 0)
-			cash += rate.get('cash', 0)
+			
+			if rate:
+				rate_data.append({'date': date, 'rate': rate})
+				points += rate.get('points', 0)
+				cash += rate.get('cash', 0)
 		
 		# 5th night free in category 3 and up
 		if nights_count == 5 and self.hotel.category >= 3 and StarwoodParser.is_spg_points_rate(self.ratecode):
 			points = int(points * 4 / 5)
-			
+		
 		return {'check_in': self.date, 'check_out': self.date + relativedelta(days=nights_count), \
 					'rates': rate_data, 'totals': {'points': points, 'cash': cash}}
+					
+
+class StarwoodRatecode(db.Model):
+	ratecode = db.StringProperty(required=True)
+	added = db.DateTimeProperty(auto_now_add=True)
+	#touched
+	
+	@classmethod
+	def calc_key_name(cls, ratecode=None):
+		return "%s_%s" % (cls.kind(), ratecode.upper())
+		
+	
+class StarwoodRateLookup(db.Model):
+	hotel = db.ReferenceProperty(StarwoodProperty, required=True)
+	ratecode = db.ReferenceProperty(StarwoodRatecode, required=True, collection_name="ratecode_set")
+	date = db.DateProperty(required=True)
+	cash = db.FloatProperty()
+	points = db.IntegerProperty()
+	added = db.DateTimeProperty(auto_now_add=True)
+	touched = db.DateTimeProperty(auto_now=True)
+	
+	@classmethod
+	def calc_key_name(cls, hotel, ratecode, date):
+		return "%s_%d-%s-%s" % (cls.kind(), hotel.id, ratecode.upper(), helper.date_to_str(date))
+
+	@staticmethod
+	def create(hotel, ratecode_entity, date):
+		key_name = StarwoodRateLookup.calc_key_name(hotel, ratecode_entity.ratecode, date)
+		starwood_ratecode_lookup = StarwoodRatecodeLookup(key_name=key_name, hotel=hotel, ratecode=ratecode_entity, date=date)
+		starwood_ratecode_lookup.put()
