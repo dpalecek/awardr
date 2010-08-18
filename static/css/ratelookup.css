@@ -1,3 +1,18 @@
+p#intro {
+	background:					#FFFADB;
+	display:					block;
+	border-radius:				4px;
+	-moz-border-radius:			4px;
+	-webkit-border-radius:		4px;
+	box-shadow:					0 0 4px #aaa;
+	-moz-box-shadow:			0 0 4px #aaa;
+	-webkit-box-shadow:			0 0 4px #aaa;
+	padding:					9px 10px;
+	text-align:					center;
+	font-size:					14px;
+	margin:						20px 20px 30px;
+}
+
 #result_container {
 	margin: 20px 0;
 }
