@@ -125,7 +125,7 @@ class SearchView(webapp.RequestHandler):
 					hotels_tuple[0].append((hotel, rates_data))
 				else:
 					hotels_tuple[1].append(hotel)
-					
+				
 		
 		template_values = { \
 			'start_date': start_date,

@@ -34,7 +34,7 @@
 						
 						<label for="field_month">
 							arriving
-							<select type="select" name="month" id="field_month" class="field">
+							<select name="month" id="field_month" class="field">
 								{% for month in months %}
 								<option value="{{ forloop.counter }}"
 									{% ifequal forloop.counter start_date.month %}selected="selected"{% endifequal %}
@@ -43,7 +43,7 @@
 							</select>
 						</label>
 						
-						<select type="select" name="day" id="field_day" class="field">
+						<select name="day" id="field_day" class="field">
 							{% for day in days %}
 							<option value="{{ day }}"
 								{% ifequal day start_date.day %}selected="selected"{% endifequal %}
@@ -51,10 +51,10 @@
 							{% endfor %}
 						</select>
 						
-						<select type="select" name="year" id="field_year" class="field">
+						<select name="year" id="field_year" class="field">
 							{% for year in years %}
 							<option value="{{ year }}"
-								{% ifequal forloop.counter start_date.year %}
+								{% ifequal year start_date.year %}
 								selected="selected"
 								{% endifequal %}
 							>{{ year }}</option>
