@@ -12,7 +12,8 @@ from app.parsers import StarwoodParser
 import app.helper as helper
 import app.resources as resources
 
-import simplejson
+try: import json
+except ImportError: import simplejson as json
 
 from lib.geomodel import geomodel
 from lib.dateutil.relativedelta import relativedelta
@@ -154,7 +155,7 @@ class StarwoodProperty(geomodel.GeoModel):
 		try:
 			geocoder_response = urlfetch.fetch(geocoder_url)
 			if geocoder_response and geocoder_response.status_code == 200:
-				geocoded = simplejson.loads(geocoder_response.content)
+				geocoded = json.loads(geocoder_response.content)
 				status = geocoded['status']
 				if status == "OK" and len(geocoded['results']):
 					coord = geocoded['results'][0]['geometry']['location']
@@ -261,7 +262,7 @@ class StarwoodDateAvailability(db.Model):
 			date = self.date + relativedelta(days=night)
 			if self.ratecode == 'SPGCP':
 				rate = resources.CATEGORY_AWARD_CHOICES['cash_points'][self.hotel.category]
-			elif self.ratecode.startswith('SPG'):
+			elif StarwoodParser.is_spg_points_rate(self.ratecode):
 				rate = StarwoodParser.mod_spg_points(self.hotel.category, date)
 			rate_data.append({'date': date, 'rate': rate})
 			points += rate.get('points', 0)

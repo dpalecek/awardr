@@ -9,11 +9,12 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import users
 from google.appengine.api import urlfetch
 
-
 import app.helper as helper
 import app.resources as resources
 
-import simplejson
+try: import json
+except ImportError: import simplejson as json
+
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 
 import logging
@@ -31,7 +32,7 @@ class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
 	def is_spg_points_rate(ratecode):
 		import re
-		return re.match('SPG[1-7]', ratecode) is not None
+		return re.match('^SPG[1-7]$', ratecode) is not None
 		
 		
 	@staticmethod
@@ -41,7 +42,7 @@ class StarwoodParser(webapp.RequestHandler):
 			response = urlfetch.fetch(url=starwood_url, deadline=10)
 			if response and response.status_code == 200:
 				try:
-					return simplejson.loads(response.content)['data']['currencyCode']
+					return json.loads(response.content)['data']['currencyCode']
 				except:
 					pass
 		
@@ -70,7 +71,7 @@ class StarwoodParser(webapp.RequestHandler):
 			url = starwood_url % (start_date, end_date, hotel_id, ratecode)
 			response = urlfetch.fetch(url=url, deadline=10)
 			if response and response.status_code == 200:
-				availability_data = simplejson.loads(response.content)['data']
+				availability_data = json.loads(response.content)['data']
 				currency_code = availability_data['currencyCode']
 			
 				available_dates = availability_data['availDates']
@@ -89,6 +90,7 @@ class StarwoodParser(webapp.RequestHandler):
 							for night, rate_data in day_data.iteritems():
 								night = int(night)
 								if StarwoodParser.is_spg_points_rate(ratecode):
+									logging.info("is spg points rate")
 									rate_data = StarwoodParser.mod_spg_points(hotel.category, day_date + datetime.timedelta(days=night))
 									
 								month_data[day_key][night] = rate_data
@@ -193,7 +195,7 @@ class StarwoodParser(webapp.RequestHandler):
 		
 		if start_date and end_date:
 			self.response.out.write( \
-				simplejson.dumps( \
+				json.dumps( \
 					StarwoodParser.parse_availability(hotel_id, start_date, end_date, ratecode)))
 			
 		else:

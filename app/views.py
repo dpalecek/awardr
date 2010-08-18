@@ -16,7 +16,8 @@ from app import helper
 from app.models import StarwoodProperty, GeocodedLocation, StarwoodDateAvailability
 from app.parsers import StarwoodParser
 
-import simplejson
+try: import json
+except ImportError: import simplejson as json
 
 from lib.geomodel import geomodel
 from lib.dateutil.relativedelta import relativedelta
@@ -40,7 +41,7 @@ def geocoder_service(address):
 	response = urlfetch.fetch(url)
 	if response.status_code == 200:
 		try:
-			loc = simplejson.loads(response.content)['results'][0]['geometry']['location']
+			loc = json.loads(response.content)['results'][0]['geometry']['location']
 			return db.GeoPt(loc['lat'], loc['lng'])
 		except:
 			pass
@@ -244,10 +245,11 @@ class RateLookupView(webapp.RequestHandler):
 							'date': date, 'submitted': True}
 		
 		if ratecode and hotel_id and date:
-			
 			date_ym = "%d-%02d" % (year, month)
 			avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
 																start_date=date_ym, end_date=date_ym)
+			
+			logging.info("\n\n\n%s\n\n\n" % avail_data)
 
 			try:
 				night = avail_data['availability'][year][month][day][1]
@@ -257,8 +259,8 @@ class RateLookupView(webapp.RequestHandler):
 			template_values['found'] = night is not None
 			if night:
 				template_values['currency_code'] = avail_data['currency_code']
-				template_values['rate'] = night['rate']
-				template_values['points'] = night['pts']
+				template_values['rate'] = night.get('rate')
+				template_values['points'] = night.get('points') or night.get('pts')
 
 		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
 								template_values))

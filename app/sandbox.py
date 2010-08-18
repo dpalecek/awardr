@@ -19,7 +19,9 @@ from app import helper
 from app.models import StarwoodProperty, StarwoodDateAvailability
 from app import resources
 
-import simplejson
+try: import json
+except ImportError: import simplejson as json
+
 from lib.geomodel import geomodel
 
 import logging

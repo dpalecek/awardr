@@ -17,7 +17,9 @@ import app.helper as helper
 
 from lib.BeautifulSoup import BeautifulSoup
 from lib.dateutil.relativedelta import relativedelta
-import simplejson
+
+try: import json
+except ImportError: import simplejson as json
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)

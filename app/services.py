@@ -12,7 +12,8 @@ from app import helper
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty
 
-import simplejson
+try: import json
+except ImportError: import simplejson as json
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
@@ -21,7 +22,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 class AllHotels(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'application/json'
-		self.response.out.write(simplejson.dumps( \
+		self.response.out.write(json.dumps( \
 			{'hotels': [hotel.props() for hotel in StarwoodProperty.all()]}))
 
 
@@ -48,7 +49,7 @@ class HotelsLookup(webapp.RequestHandler):
 		if sw and ne:
 			hotels = [] #[hotel for hotel in hotels if in_viewport(hotel.location, sw, ne)]
 		
-		self.response.out.write(simplejson.dumps({'hotels': [hotel.props() for hotel in hotels]}))
+		self.response.out.write(json.dumps({'hotels': [hotel.props() for hotel in hotels]}))
 
 
 AUTOCOMPLETE_LIMIT = 10
@@ -70,7 +71,7 @@ class HotelsAutocomplete(webapp.RequestHandler):
 					if matched_count >= AUTOCOMPLETE_LIMIT:
 						break
 						
-		self.response.out.write(simplejson.dumps(matched_hotels))
+		self.response.out.write(json.dumps(matched_hotels))
 
 
 class HotelsJS(webapp.RequestHandler):
@@ -91,7 +92,7 @@ class HotelAvailability(webapp.RequestHandler):
 		except:
 			hotel_id = 0
 					
-		self.response.out.write(simplejson.dumps({ \
+		self.response.out.write(json.dumps({ \
 			'availability': StarwoodParser.parse_availability(hotel_id, \
 				self.request.get('start_date'), self.request.get('end_date'), \
 				self.request.get('ratecode')).get('availability')}))

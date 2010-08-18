@@ -5,13 +5,14 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 from app.models import StarwoodProperty
 
-import simplejson
+try: import json
+except ImportError: import simplejson as json
 
 
 class DownloadBulk(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'application/json'
-		self.response.out.write(simplejson.dumps( \
+		self.response.out.write(json.dumps( \
 			{'hotels': [hotel.props() for hotel in StarwoodProperty.all()]}))
 
 
@@ -28,7 +29,7 @@ class UploadBulk(webapp.RequestHandler):
 		if source_url:
 			source_response = urlfetch.fetch(source_url)
 			if source_response and source_response.status_code == 200:
-				hotels_data = simplejson.loads(source_response.content)['hotels']
+				hotels_data = json.loads(source_response.content)['hotels']
 					
 		counter = 0
 		
