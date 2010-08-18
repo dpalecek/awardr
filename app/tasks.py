@@ -24,6 +24,33 @@ TASK_NAME_PROCESS_AVAILABILITY = "process-starwood-availability-%d-%s-%04d%02d%0
 YEAR_MONTH_FORMAT = "%04d-%02d"
 
 class FetchStarwoodAvailability(webapp.RequestHandler):
+	@staticmethod
+	def enqueue_task(hotel_id=None, ratecode=None, day=None, nights=None, method='GET', writer=logging.info):
+		task_params = {'hotel_id': hotel_id, 'ratecode': ratecode, 'date': helper.date_to_str(day)}
+		if method == 'GET':
+			task_params['nights'] = nights
+		task = taskqueue.Task(url='/tasks/availability/process', \
+								name=TASK_NAME_PROCESS_AVAILABILITY
+										% (hotel_id, ratecode, day.year, \
+											day.month, day.day, int(time.time())),
+								method=method,
+								params=task_params)
+
+		try:
+			task.add(TASK_QUEUE_PROCESS_AVAILABILITY)
+			writer("Added task '%s' to task queue '%s'.\n" \
+					% (task.name, TASK_QUEUE_PROCESS_AVAILABILITY))
+			return True
+			
+		except TaskAlreadyExistsError:
+			writer("Task '%s' already exists in task queue '%s'.\n" \
+					% (task.name, TASK_QUEUE_PROCESS_AVAILABILITY))
+		except TombstonedTaskError:
+			writer("Task '%s' is tombstoned in task queue '%s'.\n" \
+					% (task.name, TASK_QUEUE_PROCESS_AVAILABILITY))
+		
+		return False
+									
 	'''
 	/tasks/availability/fetch?hotel_id=232&date=2010-10&ratecode=SPGCP
 	'''
