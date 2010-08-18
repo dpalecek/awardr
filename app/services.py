@@ -66,7 +66,7 @@ class HotelsAutocomplete(webapp.RequestHandler):
 								or hotel.city.lower().find(query) != -1 \
 								or hotel.country.lower().find(query) != -1 \
 								or str(hotel.id) == query:
-					matched_hotels.append(hotel.props())
+					matched_hotels.append(hotel.props(props_filter=["name", "id", "category", "city", "country"]))
 					matched_count += 1
 					if matched_count >= AUTOCOMPLETE_LIMIT:
 						break
@@ -78,7 +78,7 @@ class HotelsJS(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/javascript'
 		
-		template_values = {'hotels': [hotel.props() for hotel in StarwoodProperty.all_cache()]}
+		template_values = {'hotels': [hotel.props(props_filter=["name", "id", "category", "city", "country"]) for hotel in StarwoodProperty.all().fetch(20)]}
 		self.response.out.write(template.render(helper.get_template_path('hotels', extension='js'),
 								template_values))
 		
