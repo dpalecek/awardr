@@ -70,14 +70,6 @@ ul.ui-autocomplete li:hover {
 	cursor: pointer;
 }
 
-p#intro {
-	margin: 8px 0 16px;
-	padding: 4px;
-	background: #fbf6d7;
-	text-align: center;
-	font-weight: bold;
-}
-
 p.example {
 	font-size: 9px;
 	color: #666;
