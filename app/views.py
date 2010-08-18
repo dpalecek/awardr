@@ -13,7 +13,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 
 from app import helper
-from app.models import StarwoodProperty, GeocodedLocation, StarwoodDateAvailability
+from app.models import StarwoodProperty, GeocodedLocation, StarwoodDateAvailability, StarwoodRatecode, StarwoodRateLookup
 from app.parsers import StarwoodParser
 
 try: import json
@@ -37,7 +37,7 @@ MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 
 def geocoder_service(address):
 	url = "http://maps.google.com/maps/api/geocode/json?address=%s&sensor=%s" \
-			% (urllib.quote_plus(address), "false")
+			% (urllib.quote_plus(helper.remove_accents(address)), "false")
 	response = urlfetch.fetch(url)
 	if response.status_code == 200:
 		try:
@@ -117,12 +117,17 @@ class SearchView(webapp.RequestHandler):
 				if hotel.id in avail_dict.keys():
 					rates_data = {}
 					for avail in avail_dict[hotel.id]:
-						if avail.ratecode == 'SPGCP':
+						# only show SPGCP if hotel category is less than 7
+						if hotel.category < 7 and avail.ratecode == 'SPGCP':
 							rate_key = 'SPGCP'
 						else:
 							rate_key = 'SPG'
-						rates_data[rate_key] = avail.expand(nights)
+							
+						if rate_key:
+							rates_data[rate_key] = avail.expand(nights)
+							
 					hotels_tuple[0].append((hotel, rates_data))
+					
 				else:
 					hotels_tuple[1].append(hotel)
 				
@@ -248,19 +253,39 @@ class RateLookupView(webapp.RequestHandler):
 			date_ym = "%d-%02d" % (year, month)
 			avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
 																start_date=date_ym, end_date=date_ym)
-			
-			logging.info("\n\n\n%s\n\n\n" % avail_data)
 
 			try:
 				night = avail_data['availability'][year][month][day][1]
 			except:
 				night = None
 			
-			template_values['found'] = night is not None
-			if night:
+			template_values['found'] = night and (night.get('rate') or night.get('points') or night.get('pts'))
+			if template_values['found']:
 				template_values['currency_code'] = avail_data['currency_code']
-				template_values['rate'] = night.get('rate')
+				template_values['cash'] = night.get('rate')
 				template_values['points'] = night.get('points') or night.get('pts')
+				
+				logging.info("\n\n\n%s\n\n\n" % template_values)
+				
+				ratecode_key_name = StarwoodRatecode.calc_key_name(ratecode)
+				ratecode_entity = StarwoodRatecode.get_by_key_name(ratecode_key_name)
+				if not ratecode_entity:
+					ratecode_entity = StarwoodRatecode(key_name=ratecode_key_name, ratecode=ratecode)
+					ratecode_entity.put()
+					
+				rate_lookup_key_name = StarwoodRateLookup.calc_key_name(hotel, ratecode_entity.ratecode, helper.str_to_date(date))
+				rate_lookup_entity = StarwoodRateLookup.get_by_key_name(rate_lookup_key_name)
+				if not rate_lookup_entity:
+					rate_lookup_entity = StarwoodRateLookup(key_name=rate_lookup_key_name, hotel=hotel, \
+															ratecode=ratecode_entity, date=helper.str_to_date(date))
+				
+				if template_values['cash'] or template_values['points']:
+					if template_values['cash']:
+						rate_lookup_entity.cash = template_values['cash']
+					if template_values['points']:
+						rate_lookup_entity.points = template_values['points']
+					rate_lookup_entity.put()
+				
 
 		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
 								template_values))
