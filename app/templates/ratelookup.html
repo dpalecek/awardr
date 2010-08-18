@@ -97,8 +97,8 @@
 						{% if found %}
 						is<br />
 						<span id="the_rate">
-						{% if rate %}{{ rate|floatformat:2 }} {{ currency_code }}{% endif %}
-						{% if rate and points %}and{% endif %}
+						{% if cash %}{{ cash|floatformat:2 }} {{ currency_code }}{% endif %}
+						{% if cash and points %}and{% endif %}
 						{% if points %}{{ points }} points{% endif %}
 						</span>
 						
