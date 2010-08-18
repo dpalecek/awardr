@@ -114,12 +114,16 @@ class ProcessStarwoodAvailability(webapp.RequestHandler):
 		if hotel and day and ratecode and nights_list:
 			dirty = True
 			
+			# lookup availability entity for hotel, day, and ratecode
 			availability = StarwoodDateAvailability.lookup(hotel, day, ratecode)
-			if availability and set(availability.nights) == set(nights_list):
-				dirty = False
-			else:
+			if not availability:
 				availability = StarwoodDateAvailability(hotel=hotel, date=day, ratecode=ratecode)
-				
+			
+			# if the list of nights match, don't update
+			if set(availability.nights) == set(nights_list):
+				dirty = False
+
+			# if a change exists, insert/update the entity
 			if dirty:
 				availability.nights = nights_list
 				availability.put()

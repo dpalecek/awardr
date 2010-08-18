@@ -90,7 +90,6 @@ class StarwoodParser(webapp.RequestHandler):
 							for night, rate_data in day_data.iteritems():
 								night = int(night)
 								if StarwoodParser.is_spg_points_rate(ratecode):
-									logging.info("is spg points rate")
 									rate_data = StarwoodParser.mod_spg_points(hotel.category, day_date + datetime.timedelta(days=night))
 									
 								month_data[day_key][night] = rate_data
