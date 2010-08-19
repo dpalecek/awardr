@@ -157,7 +157,11 @@ class HotelAvailabilityStarter(webapp.RequestHandler):
 			self.response.out.write("Got hotel %s [%s].\n" % (hotel.name, hotel.id))
 			added_task_count = 0
 			
-			for ratecode in ('SPGCP', 'SPG%d' % (hotel.category)):
+			ratecodes = ['SPG%d' % (hotel.category)]
+			if hotel.category < 7:
+				ratecodes.append('SPGCP')
+			
+			for ratecode in ratecodes:
 				start_date = datetime.date.today()
 				end_date = start_date + relativedelta(months=MONTHS_DELTA)
 				
