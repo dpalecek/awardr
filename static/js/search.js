@@ -1,5 +1,17 @@
 $(document).ready(
 	function() {
+		var $scrollingDiv = $("#hotels_map_wrapper");
+		var max_margin_top = $(document).height() - $scrollingDiv.height() - 200;
+		$(window).scroll(function() {
+			var margin_top = Math.max($(window).scrollTop() + 30, 0);
+			margin_top = Math.min(margin_top, max_margin_top);
+				
+			$scrollingDiv
+				.stop()
+				.animate({"marginTop": margin_top + "px"}, "slow" );			
+		});
+		
+		
 		var nights_select = $("select#field_nights");
 		var nights_text = $("#nights_text");
 		nights_select.change(function(event) {
@@ -19,17 +31,15 @@ $(document).ready(
 			
 			var create_hotel_marker = function(hotel, i) {
 				var icon_number = (i + 1).toString();
-				console.log(icon_number);
 				if (i + 1 < 10) {
 					icon_number = "0" + icon_number;
 				}
-				console.log(icon_number);
 				
 				var hotel_marker = new google.maps.Marker({
 					position: new google.maps.LatLng(hotel['coord']['lat'], hotel['coord']['lng']),
 					map: hotels_map,
 					title: hotel.name,
-					icon: "/static2/images/icons/darkblue" + icon_number + ".png",
+					//icon: "/static2/images/icons/darkblue" + icon_number + ".png",
 					zIndex: (10 - i)
 				});
 				
@@ -185,12 +195,14 @@ $(document).ready(
 			});
 			
 			if (google.loader.ClientLocation) {
-				//console.log(google.loader.ClientLocation.latitude);
 			}
 			
-			$(".hotel_name").click(function(event) {
+			var hotel_names = $("h3.hotel_name");
+			if (hotel_names.length > 0) {
+				hotel_names.click(function(event) {
 				
-			});
+				});
+			}
 		});
 	}
 );
