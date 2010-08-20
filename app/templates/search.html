@@ -30,7 +30,7 @@
 						<label for="field_where">
 							near
 							<input type="text" name="where" id="field_where"
-						 		value="{{ where|escape }}" /></label>,
+						 		value="{{ where|escape }}" class="field" /></label>,
 						
 						<label for="field_month">
 							arriving
@@ -80,7 +80,7 @@
 			</div>
 			
 			<div id="search_results_container">
-				<div class="grid_8">
+				<div class="grid_7">
 					<div id="nearest_hotels_container">
 					
 						<h2>Hotels with award availability</h2>
@@ -182,7 +182,7 @@
 						
 						{% if hotels_tuple.1 %}
 							<h2 id="unavailable_hotels_header">
-								Other hotels in the area</h2>
+								Other nearby hotels</h2>
 							
 							<ol class="hotels_list" id="unavailable_hotels_list">
 							{% for hotel in hotels_tuple.1 %}
@@ -196,7 +196,8 @@
 									<div class="hotel_info">
 										<h3 class="hotel_name">{{ hotel.name }}</h3>
 										
-										{{ hotel.html_short_address }}
+										{{ hotel.html_short_address }} -
+										<span class="category">Category {{ hotel.category }}</span>
 									</div>
 								
 									<div class="clear"></div>
@@ -206,8 +207,10 @@
 						{% endif %}
 					</div>
 				</div>
-				<div class="prefix_1 grid_7">
-					<div id="hotels_map"></div>
+				<div class="prefix_1 grid_8">
+					<div id="hotels_map_wrapper">
+						<div id="hotels_map"></div>
+					</div>
 				</div>
 				<div class="clear"></div>
 			</div>
