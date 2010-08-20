@@ -3,7 +3,7 @@
 }
 
 #hotels_map {
-	height:						400px;
+	height:						340px;
 	width:						100%;
 }
 
@@ -19,10 +19,10 @@
 	padding:					9px 10px;
 	text-align:					center;
 	font-size:					16px;
-	margin:						12px 0;
+	margin:						18px 0;
 }
 
-#search_form_container form#search_form input,
+#search_form_container form#search_form .field,
 #search_form_container form#search_form select {
 	font-size:					16px;
 	display:					inline-block;
@@ -30,7 +30,7 @@
 }
 
 #search_form_container form#search_form input#field_where {
-	width:						240px;
+	width:						220px;
 	padding:					2px 4px;
 }
 
@@ -39,6 +39,11 @@
 	width:						68px;
 	text-align:					left;
 }
+
+form#search_form input.fancybutton {
+	padding:					4px 18px;
+}
+
 
 
 #nearest_hotels_container h2 {

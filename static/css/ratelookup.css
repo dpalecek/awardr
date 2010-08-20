@@ -40,7 +40,14 @@ label {
 
 input.field {
 	font-family: monospace;
-	font-size: 12px; 
+}
+
+form#form_ratecode label {
+	font-size: 16px;
+}
+
+form#form_ratecode input.field {
+	font-size: 12px;
 }
 
 input#field_ratecode {
@@ -78,4 +85,23 @@ p.example {
 p#ratecode_examples span.ratecode_example:hover {
 	cursor: pointer;
 	text-decoration: underline;
+}
+
+
+
+/* Scrollable autocomplete. */
+.ui-autocomplete {
+	max-height: 200px;
+	overflow-y: auto;
+}
+/* IE 6 doesn't support max-height
+ * we use height instead, but this forces the menu to always be this tall
+ */
+* html .ui-autocomplete {
+	height: 100px;
+}
+
+img.ui-datepicker-trigger {
+	margin: 0 0 0 6px;
+	cursor: pointer;
 }
