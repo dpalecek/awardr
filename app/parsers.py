@@ -153,7 +153,7 @@ class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
 	def parse(property_id, ratecode='SPGCP'):
 		valid_property = False
-		hotel_props = {}
+		hotel_props = {'id': property_id}
 		
 		starwood_response = urlfetch.fetch(url='%s?propertyID=%s' % (starwood_url, property_id),
 											deadline=10)
@@ -173,15 +173,11 @@ class StarwoodParser(webapp.RequestHandler):
 					pass
 					
 				if valid_property:
-					hotel_props['id'] = property_id
 					hotel_props['address'] = StarwoodParser.parse_address(soup)
 					#hotel_props['awards'] = StarwoodParser.parse_starwood(soup.find("div", "tabsContentContainer").findAll("div", "tabContent"))
 					hotel_props['image_url'] = str("http://www.starwoodhotels.com%s" % (soup.find("img", "propertyThumbnail")['src']))
 		
-		if valid_property and len(hotel_props):
-			return hotel_props
-		else:
-			return None
+		return valid_property and hotel_props or None
 		
 		
 	def get(self, hotel_id=None):
