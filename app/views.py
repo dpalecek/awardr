@@ -30,8 +30,8 @@ template.register_template_library('app.filters')
 
 
 MILES_TO_METERS = 1609.344 # miles to meters
-MAX_HOTELS_RESULTS = 20
-MAX_HOTELS_DISTANCE = 100 * MILES_TO_METERS
+MAX_HOTELS_RESULTS = 30
+MAX_HOTELS_DISTANCE = 70 * MILES_TO_METERS
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
 
 
@@ -199,100 +199,152 @@ class StarwoodPropertiesView(webapp.RequestHandler):
 
 
 class RateLookupView(webapp.RequestHandler):
-	def get(self):		
-		night = datetime.date.today() #+ datetime.timedelta(days=30)
-		template_values = {'date': "%d-%02d-%02d" % (night.year, night.month, night.day)}
+	def get(self):
+		if not all((arg in self.request.arguments()) for arg in ('hotel_id', 'ratecode', 'date')):
+			template_values = { \
+				'date': helper.date_to_str(datetime.date.today() + relativedelta(months=1))}
 			
-		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
-								template_values))
-								
-	def post(self):
-		# ratecode param
-		ratecode = self.request.get('ratecode', default_value='').strip().upper()
-		if not (ratecode and len(ratecode)):
-			ratecode = 'RACK'
+			self.response.out.write(template.render(helper.get_template_path("ratelookup"),
+									template_values))
+		else:
+			# ratecode param
+			ratecode = self.request.get('ratecode', default_value='').strip().upper()
+			if not (ratecode and len(ratecode)):
+				ratecode = 'RACK'
 		
-		# hotel param
-		try:
-			hotel_id = int(self.request.get('hotel_id', default_value="-1").strip())
-		except:
-			hotel_id = None
-			
-		if hotel_id:
-			hotel = StarwoodProperty.get_by_id(id=hotel_id)
-			
-		if not hotel_id:
-			hotel_name = self.request.get('hotel', default_value='').strip()
-			
-			# try to look up the hotel based on name
-			if hotel_name and len(hotel_name):
-				hotel = StarwoodProperty.get_by_prop(prop='name', value='hotel_name')
-			else:
-				hotel = None
-				
-			# just pick a random hotel if no hotel id or name specified
-			if not hotel:
-				hotel = StarwoodProperty.random()
-				
-			hotel_id = hotel.id
-		
-		# data param
-		date = self.request.get('date', default_value='').strip()
-		try:
-			year, month, day = [int(p) for p in date.split('-')]
-		except:
-			today = datetime.date.today()
-			date = "%d-%02d-%02d" % (today.year, today.month, today.day)
-			year, month, day = [int(p) for p in date.split('-')]
-		
-		
-		template_values = {'ratecode': ratecode, 'hotel_id': hotel_id, 'hotel': hotel, \
-							'date': date, 'submitted': True}
-		
-		if ratecode and hotel_id and date:
-			date_ym = "%d-%02d" % (year, month)
-			avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
-																start_date=date_ym, end_date=date_ym)
-
+			# hotel param
 			try:
-				night = avail_data['availability'][year][month][day][1]
+				hotel_id = int(self.request.get('hotel_id', default_value="-1").strip())
 			except:
-				night = None
+				hotel_id = None
 			
-			template_values['found'] = night and (night.get('rate') or night.get('points') or night.get('pts'))
-			if template_values['found']:
-				template_values['currency_code'] = avail_data['currency_code']
-				template_values['cash'] = night.get('rate')
-				template_values['points'] = night.get('points') or night.get('pts')
+			if hotel_id:
+				hotel = StarwoodProperty.get_by_id(id=hotel_id)
+			
+			if not hotel_id:
+				hotel_name = self.request.get('hotel', default_value='').strip()
+			
+				# try to look up the hotel based on name
+				if hotel_name and len(hotel_name):
+					hotel = StarwoodProperty.get_by_prop(prop='name', value='hotel_name')
+				else:
+					hotel = None
 				
-				logging.info("\n\n\n%s\n\n\n" % template_values)
+				# just pick a random hotel if no hotel id or name specified
+				if not hotel:
+					hotel = StarwoodProperty.random()
 				
-				ratecode_key_name = StarwoodRatecode.calc_key_name(ratecode)
-				ratecode_entity = StarwoodRatecode.get_by_key_name(ratecode_key_name)
-				if not ratecode_entity:
-					ratecode_entity = StarwoodRatecode(key_name=ratecode_key_name, ratecode=ratecode)
-					ratecode_entity.put()
-					
-				rate_lookup_key_name = StarwoodRateLookup.calc_key_name(hotel, ratecode_entity.ratecode, helper.str_to_date(date))
-				rate_lookup_entity = StarwoodRateLookup.get_by_key_name(rate_lookup_key_name)
-				if not rate_lookup_entity:
-					rate_lookup_entity = StarwoodRateLookup(key_name=rate_lookup_key_name, hotel=hotel, \
-															ratecode=ratecode_entity, date=helper.str_to_date(date))
-				
-				if template_values['cash'] or template_values['points']:
-					if template_values['cash']:
-						rate_lookup_entity.cash = template_values['cash']
-					if template_values['points']:
-						rate_lookup_entity.points = template_values['points']
-					rate_lookup_entity.put()
-				
+				hotel_id = hotel.id
+		
+			# data param
+			date = self.request.get('date', default_value='').strip()
+			try:
+				year, month, day = [int(p) for p in date.split('-')]
+			except:
+				today = datetime.date.today()
+				date = helper.date_to_str(today)
+				year, month, day = [int(p) for p in date.split('-')]
+		
+		
+			template_values = {'ratecode': ratecode, 'hotel_id': hotel_id, 'hotel': hotel, \
+								'date': date, 'submitted': True}
+		
+			if ratecode and hotel_id and date:
+				date_ym = "%d-%02d" % (year, month)
+				avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
+																	start_date=date_ym, end_date=date_ym)
+																
+				currency_code = avail_data.get('currency_code')
 
-		self.response.out.write(template.render(helper.get_template_path("ratelookup"),
+				try:
+					night = avail_data['availability'][year][month][day][1]
+				except:
+					night = None
+			
+				template_values['found'] = (night and (night.get('rate') or night.get('points') or night.get('pts'))) is not None
+				if template_values['found']:
+					template_values['currency_code'] = avail_data['currency_code']
+					template_values['cash'] = night.get('rate')
+					template_values['points'] = night.get('points') or night.get('pts')
+				
+					logging.info("\n\n\n%s\n\n\n" % template_values)
+				
+					ratecode_key_name = StarwoodRatecode.calc_key_name(ratecode)
+					ratecode_entity = StarwoodRatecode.get_by_key_name(ratecode_key_name)
+					if not ratecode_entity:
+						ratecode_entity = StarwoodRatecode(key_name=ratecode_key_name, ratecode=ratecode)
+						ratecode_entity.put()
+					
+					rate_lookup_key_name = StarwoodRateLookup.calc_key_name(hotel, ratecode_entity.ratecode, helper.str_to_date(date))
+					rate_lookup_entity = StarwoodRateLookup.get_by_key_name(rate_lookup_key_name)
+					if not rate_lookup_entity:
+						rate_lookup_entity = StarwoodRateLookup(key_name=rate_lookup_key_name, hotel=hotel, \
+																ratecode=ratecode_entity, date=helper.str_to_date(date))
+				
+					if template_values['cash'] or template_values['points']:
+						if template_values['cash']:
+							rate_lookup_entity.cash = template_values['cash']
+						if template_values['points']:
+							rate_lookup_entity.points = template_values['points']
+						rate_lookup_entity.put()
+					
+					if template_values['cash'] and currency_code.upper() != 'USD':
+						converted = helper.currency_conversion(currency_code, template_values['cash'])
+						if converted:
+							template_values['to_usd'] = "%.2f" % converted
+			
+			self.response.out.write(template.render(helper.get_template_path("ratelookup"),
+									template_values))
+
+
+
+class BrowseCountryView(webapp.RequestHandler):
+	def get(self, country_slug):
+		
+		
+		country_slug = country_slug.lower()
+		special_countries = { \
+			'georgia': 'Georgia, Republic of',
+			'maldives': 'Maldives, Republic of',
+			'panama': 'Panama, Republic of',
+		}
+		country_name = special_countries.get(country_slug)
+		if not country_name:
+			country_name = ' '.join((country_part.capitalize() for country_part in country_slug.split('-')))
+			
+		template_values = {'country_name': country_name}
+		hotels = StarwoodProperty.all().filter('country =', country_name).order('name')
+		if hotels.count():
+			template_values['hotels'] = hotels
+			
+		self.response.out.write(template.render(helper.get_template_path("browse_country"),
+								template_values))
+		
+class BrowseCountriesIndexView(webapp.RequestHandler):
+	def get(self):
+		sort_by = self.request.get('sort', default_value='name')
+		
+		countries_count = defaultdict(int)
+		for hotel in StarwoodProperty.all():
+			countries_count[hotel.country] += 1
+		countries = [{'name': country, 'count': count, 'slug': str('-'.join(country.split(',')[0].lower().split()))} \
+						for country, count in countries_count.iteritems()]
+		template_values = {'countries': sorted(countries, key=lambda country: country[sort_by], reverse=(sort_by == 'count')), \
+							'sort_by': sort_by}
+			
+		self.response.out.write(template.render(helper.get_template_path("browse_countries"),
 								template_values))
 
+class BrowseView(webapp.RequestHandler):
+	def get(self):
+		self.redirect('/browse/countries')		
+		
 
 def main():
 	ROUTES = [
+		('/browse/countries/(.*)', BrowseCountryView),
+		('/browse/countries', BrowseCountriesIndexView),
+		('/browse', BrowseView),
 		('/rate-lookup', RateLookupView),
 		('/search', SearchView),
 		('/starwood/(.*)', StarwoodPropertyView),

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block head_title %}awardpad - Starwood rate lookup tool{% endblock %}
+
+{% block head_extended %}
+		<link rel="stylesheet" type="text/css" href="/static2/css/browse_country.css" />
+{% endblock %}
+
+{% block body_content %}
+			<div class="grid_8">
+				<h2>Browse hotels in {{ country_name }}</h2>
+			</div>
+			<div class="grid_8">
+			
+			</div>
+			<div class="clear"></div>
+					
+			<div class="grid_8">
+				<ul id="hotels">
+				{% for hotel in hotels %}
+					<li>
+						<a href="/hotels/starwood/{{ hotel.id }}/{{ hotel.name|slugify }}">
+							{{ hotel.name }}</a>
+						<p>{{ hotel.category }}</p>
+					</li>
+				{% endfor %}
+				</ul>
+			</div>
+			<div class="grid_8">&nbsp;</div>
+			<div class="clear"></div>
+{% endblock %}

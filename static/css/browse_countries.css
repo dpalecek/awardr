@@ -1,0 +1,16 @@
+ul#countries{
+	width:						100%;
+	overflow:					hidden;
+	margin:						20px 0;
+	font-size:					12px;
+}
+
+ul#countries li{
+	line-height:				1.5em;
+	border-bottom:				1px dotted #ddd;
+	float:						left;
+	display:					inline;
+	width:						164px;
+	margin:						0px 18px 16px 0;
+	padding:					2px 0 2px 6px;
+}
