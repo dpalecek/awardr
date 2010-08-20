@@ -2,6 +2,7 @@
 
 {% block head_extended %}
 		<link rel="stylesheet" type="text/css" href="/static2/css/landing.css" />
+		<script src="/static2/js/landing.js"></script>
 {% endblock %}
 
 {% block body_content %}
@@ -20,7 +21,12 @@
 					<div class="grid_6 suffix_3">
 						<input type="text" name="where" id="field_where"
 						 	class="field" />
-						<p class="example">(e.g. Tokyo, 10001, Los Angeles, CA)</p>
+						<p class="example" id="example_locations">
+							(e.g. <span class="example_location">Tokyo</span>,
+							<span class="example_location">10001</span>,
+							<span class="example_location">Los Angeles, CA</span>,
+							<span class="example_location">DXB</span>)
+						</p>
 					</div>
 					<div class="clear"></div>
 				</div>
@@ -29,14 +35,8 @@
 					<div class="prefix_2 grid_5">
 						<label for="field_month">When?</label>
 					</div>
-					<div class="grid_6 suffix_3">
-						{% comment %}
-						<input type="text" name="when" id="field_when"
-							value="12/25/2000" maxlength="10"
-							class="field" />
-						{% endcomment %}
-						
-						<select type="select" name="month" id="field_month" class="field">
+					<div class="grid_6 suffix_3">						
+						<select name="month" id="field_month" class="field">
 							{% for month in months %}
 							<option value="{{ forloop.counter }}"
 								{% ifequal forloop.counter start_day.month %}
