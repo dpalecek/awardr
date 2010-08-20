@@ -46,7 +46,7 @@
 							{% endfor %}
 						</select>
 						
-						<select type="select" name="day" id="field_day" class="field">
+						<select name="day" id="field_day" class="field">
 							{% for day in days %}
 							<option value="{{ day }}"
 								{% ifequal forloop.counter start_day.day %}
@@ -56,7 +56,7 @@
 							{% endfor %}
 						</select>
 						
-						<select type="select" name="year" id="field_year" class="field">
+						<select name="year" id="field_year" class="field">
 							{% for year in years %}
 							<option value="{{ year }}"
 								{% ifequal forloop.counter start_day.year %}
@@ -85,16 +85,19 @@
 					<div class="clear"></div>
 				</div>
 				
-				<div class="grid_16">
-					<input type="submit" value="Search" id="landing_form_submit"
-					 		 class="fancybutton" />
+				<div class="field_container">
+					<div class="prefix_7 grid_6 suffix_3">
+						<input type="submit" value="Search" id="landing_form_submit"
+						 		 class="fancybutton" />
+					</div>
 				</div>
+				<div class="clear"></div>
 			</form>
-			<div class="clear"></div>
+			
 			
 			<div class="prefix_1 grid_14 suffix_1">
 				<p id="more_intro">
-					Also, try out the <a href="/rate-lookup">Starwood rate lookup tool</a>.
+					Check out the <a href="/rate-lookup">Starwood rate lookup tool</a>.
 				</p>
 			</div>
 			<div class="clear"></div>
