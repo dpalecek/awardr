@@ -89,8 +89,7 @@ class GeocodeProperty(webapp.RequestHandler):
 
 class FetchDirectory(webapp.RequestHandler):
 	def get(self, category_id=1):
-		def is_valid_property(d):
-			return d['class'].find('newProperty') == -1 and info_div.find('a', 'propertyName') is not None
+		is_valid_property = lambda info_div: info_div.find('a', 'propertyName') is not None
 		
 		self.response.headers['Content-Type'] = 'text/plain'
 	
@@ -103,14 +102,14 @@ class FetchDirectory(webapp.RequestHandler):
 			soup = BeautifulSoup(directory_response.content)
 			for link in [info_div.find('a', 'propertyName') for info_div in soup.findAll('div', 'propertyInfo') if is_valid_property(info_div)]:
 				hotel_url = link.get('href')
-				directory_hotels[int(hotel_url.split('propertyID=')[1])] = str(hotel_url.split('/')[1]) #a['href'].split('?')[1].split('&')
+				# id => brand
+				directory_hotels[int(hotel_url.split('propertyID=')[1])] = str(hotel_url.split('/')[1])
 		
-		diff_ids = list(frozenset(directory_hotels.keys()) - frozenset([hotel.id for hotel in StarwoodProperty.all()]))
-		diff_ids.sort()
+		diff_ids = sorted(list(frozenset(directory_hotels.keys()) - frozenset([hotel.id for hotel in StarwoodProperty.all()])))
 		
 		added_task_count = 0
 
-		if diff_ids and len(diff_ids):	
+		if diff_ids:	
 			for prop_id in diff_ids:
 				task = taskqueue.Task(url='/tasks/hotel', \
 										name=TASK_NAME_PROCESS_HOTEL % (prop_id, datetime.datetime.now().microsecond), \
@@ -224,7 +223,7 @@ class CronRefreshHotelInfo(webapp.RequestHandler):
 		if hotel_id:
 			hotel = hotels.filter('id =', hotel_id).get()
 		else:
-			hotel = hotels.filter('currency =', None).get() #order('last_refreshed').get()
+			hotel = hotels.filter('currency =', None).get()
 		
 		if hotel:
 			info = StarwoodParser.parse(hotel.id)
