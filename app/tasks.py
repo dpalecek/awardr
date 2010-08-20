@@ -167,7 +167,7 @@ class ProcessStarwoodAvailability(webapp.RequestHandler):
 			# lookup availability entity for hotel, day, and ratecode
 			availability = StarwoodDateAvailability.lookup(hotel, day, ratecode)
 			if not availability:
-				availability = StarwoodDateAvailability(hotel=hotel, date=day, ratecode=ratecode)
+				availability = StarwoodDateAvailability.create(hotel=hotel, date=day, ratecode=ratecode)
 			
 			# if the list of nights match, don't update
 			if set(availability.nights) == set(nights_list):
