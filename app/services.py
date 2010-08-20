@@ -59,8 +59,9 @@ class HotelsAutocomplete(webapp.RequestHandler):
 		matched_hotels = []
 		matched_count = 0
 		
-		query = self.request.get('term', default_value='').strip().lower()
-		if query and len(query):
+		query = self.request.get('term') or self.request.get('q')
+		if query:
+			query = query.strip().lower()
 			for hotel in StarwoodProperty.all_cache().fetch(2000):
 				if hotel.name.lower().find(query) != -1 \
 								or hotel.city.lower().find(query) != -1 \
@@ -78,7 +79,14 @@ class HotelsJS(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/javascript'
 		
-		template_values = {'hotels': [hotel.props(props_filter=["name", "id", "category", "city", "country"]) for hotel in StarwoodProperty.all().fetch(20)]}
+		def autocomplete_format(hotel_props):
+			return {'value': hotel_props['id'], \
+					'label': "%s" % hotel_props['name'],
+					'desc': "%s, %s - Category %d" % (hotel_props['city'], hotel_props['country'], hotel_props['category'])}
+
+		hotels = [autocomplete_format(hotel.props(props_filter=["name", "id", "category", "city", "country"])) for hotel in StarwoodProperty.all()]
+		#hotels = [str(helper.remove_accents(hotel.name)) for hotel in StarwoodProperty.all()]
+		template_values = {'hotels': json.dumps(hotels)}
 		self.response.out.write(template.render(helper.get_template_path('hotels', extension='js'),
 								template_values))
 		
