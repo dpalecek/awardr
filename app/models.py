@@ -89,16 +89,16 @@ class StarwoodProperty(geomodel.GeoModel):
 	
 	currency = db.StringProperty() #CURRENCY_CHOICES)
 	
+	added = db.DateTimeProperty(auto_now_add=True)
 	last_checked = db.DateTimeProperty(auto_now=True)
-	last_refreshed = db.DateTimeProperty(auto_now=True, default=datetime.datetime.now())
 	
 	
 	def __str__(self):
 		return "%s (%d)" % (self.name, self.id)
 	
-	@staticmethod
-	def calc_key_name(id=None):
-		return (id and "starwood_hotel_%d" % (id)) or None
+	@classmethod
+	def calc_key_name(cls, id=None):
+		return "%s_%d" % (cls.kind(), id)
 	
 	def props(self, props_filter=None):
 		props = {'id': int(self.id), \
@@ -133,7 +133,7 @@ class StarwoodProperty(geomodel.GeoModel):
 		return "<address>\n%s</address>\n" % address_contents
 	
 	def html_short_address(self):
-		return "<address>%s, %s</address>\n" % (self.city, self.country)
+		return "<address>%s, %s</address>\n" % ((self.city, self.country), (self.city, self.state))[self.state is not None]
 	
 	def encoded_full_address(self, with_address2=True):
 		return self.full_address(encoded=True, with_address2=with_address2)
@@ -199,29 +199,18 @@ class StarwoodProperty(geomodel.GeoModel):
 			hotel.put()
 			
 		return (hotel is not None)
-	
+		
 	@staticmethod
 	def get_by_id(id=None):
-		if id:
-		 	hotel = StarwoodProperty.all().filter('id =', id).get()
-		else:
-			hotel = None
-		
-		return hotel
+		return id and StarwoodProperty.all().filter('id =', id).get() or None
 
 	@staticmethod
 	def get_by_prop(prop=None, value=None):
-		if prop and value:
-			hotel = StarwoodProperty.all().filter('%s =' % (prop), value).get()
-		else:
-			hotel = None
-
-		return hotel
+		return prop and value and StarwoodProperty.all().filter('%s =' % (prop), value).get() or None
 
 	@staticmethod
 	def random():
-		hotel = random.choice(StarwoodProperty.all().fetch(2000))
-		return hotel
+		return random.choice(StarwoodProperty.all().fetch(2000))
 	
 	@staticmethod
 	def all_cache():
@@ -244,6 +233,15 @@ class StarwoodDateAvailability(db.Model):
 	def __str__(self):
 		return "%s (%d): %s & %s => %s" \
 				% (self.hotel.name, self.hotel.id, self.date, self.ratecode, self.nights)
+					
+	@classmethod
+	def calc_key_name(cls, hotel, ratecode, date):
+		return "%s_%d-%s-%s" % (cls.kind(), hotel.id, ratecode.upper(), helper.date_to_str(date))
+
+	@staticmethod
+	def create(hotel, ratecode, date):
+		key_name = StarwoodDateAvailability.calc_key_name(hotel, ratecode, date)
+		return StarwoodDateAvailability(key_name=key_name, hotel=hotel, date=date, ratecode=ratecode)
 	
 	@staticmethod
 	def lookup(hotel=None, date=None, ratecode=None):
@@ -298,6 +296,7 @@ class StarwoodRateLookup(db.Model):
 	date = db.DateProperty(required=True)
 	cash = db.FloatProperty()
 	points = db.IntegerProperty()
+	
 	added = db.DateTimeProperty(auto_now_add=True)
 	touched = db.DateTimeProperty(auto_now=True)
 	
