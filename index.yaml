@@ -36,5 +36,10 @@ indexes:
 
 - kind: StarwoodProperty
   properties:
+  - name: country
+  - name: name
+
+- kind: StarwoodProperty
+  properties:
   - name: location_geocells
   - name: location
