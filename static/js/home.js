@@ -67,7 +67,6 @@ $(document).ready(
 			});
 			
 			if (google.loader.ClientLocation) {
-				console.log(google.loader.ClientLocation.latitude);
 			}
 		});
 	}
