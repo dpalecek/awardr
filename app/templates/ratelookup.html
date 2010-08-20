@@ -5,10 +5,6 @@
 {% block head_extended %}
 		<link rel="stylesheet" type="text/css"
 			href="/static2/css/ratelookup.css" />
-			
-		<link rel="stylesheet" type="text/css" href="/static2/libs/jquery.autocomplete/jquery.autocomplete.css" /> 
-		<script src="/static2/libs/jquery.autocomplete/jquery.autocomplete.min.js"></script> 
-
 
 		<script src="/services/hotels.js"></script>
 		<script src="/static2/js/ratelookup.js"></script>
@@ -17,34 +13,37 @@
 {% block body_content %}
 			<div class="prefix_2 grid_12 suffix_2">
 				<p id="intro">
-					Use the Starwood rate lookup tool to find the rate for a given hotel, date, and ratecode.
+					Use the Starwood rate lookup tool to find the
+					rate for a given hotel, date, and ratecode.
 				</p>
 			</div>
 			<div class="clear"></div>
 			
-			<form id="form_ratecode" method="post" action="">
+			<form id="form_ratecode" method="get" action="">
 				<div class="field_container">
-					<div class="prefix_2 grid_4">
+					<div class="prefix_2 grid_5">
 						<label for="field_hotel">
 							Hotel
 						</label>
 					</div>
-					<div class="grid_6 suffix_4">
-						<input type="text" maxlength="100" name="hotel" id="field_hotel"
+					<div class="grid_6 suffix_3">
+						<input type="text" maxlength="100" id="field_hotel"
 							class="field" value="{{ hotel.name }}" />
-						<p class="example">(Start typing and then select a hotel from the list.)
-						<input type="hidden" name="hotel_id" id="field_hotel_id" value="{{ hotel_id }}" />
+						<p class="example">
+							(Start typing and then select a hotel from the list.)</p>
+						<input type="hidden" name="hotel_id"
+							id="field_hotel_id" value="{{ hotel_id }}" />
 					</div>
 					<div class="clear"></div>
 				</div>
 				
 				<div class="field_container">
-					<div class="prefix_2 grid_4">
+					<div class="prefix_2 grid_5">
 						<label for="field_ratecode">
 							Rate Code
 						</label>
 					</div>
-					<div class="grid_6 suffix_4">
+					<div class="grid_6 suffix_3">
 						<input type="text" maxlength="12" name="ratecode" id="field_ratecode"
 							class="field" value="{{ ratecode }}" />
 						<p class="example" id="ratecode_examples">
@@ -61,12 +60,12 @@
 				</div>
 				
 				<div class="field_container">
-					<div class="prefix_2 grid_4">
+					<div class="prefix_2 grid_5">
 						<label for="field_date">
 							Date
 						</label>
 					</div>
-					<div class="grid_6 suffix_4">
+					<div class="grid_6 suffix_3">
 						<input type="text" maxlength="10" name="date" id="field_date"
 							class="field" value="{{ date }}" />
 						<p class="example">
@@ -77,9 +76,8 @@
 				</div>
 				
 				<div class="field_container">
-					<div class="prefix_6 grid_10">
-						<input type="submit" name="action" value="Lookup" class="fancybutton"
-						 	style="" />
+					<div class="prefix_7 grid_10">
+						<input type="submit" value="Lookup" class="fancybutton" />
 					</div>
 					<div class="clear"></div>
 				</div>
@@ -87,7 +85,7 @@
 			
 			{% if submitted %}
 			<div id="result_container">
-				<div class="prefix_2 grid_12 suffix_2">
+				<div class="prefix_1 grid_14 suffix_1">
 					<p id="result_message">
 						The <span class="bold">{{ ratecode }}</span>
 						rate at <span class="bold">{{ hotel.name }}</span>
@@ -97,7 +95,10 @@
 						{% if found %}
 						is<br />
 						<span id="the_rate">
-						{% if cash %}{{ cash|floatformat:2 }} {{ currency_code }}{% endif %}
+						{% if cash %}
+						{{ cash|floatformat:2 }} {{ currency_code }}
+						{% if to_usd %}(~{{ to_usd }} USD){% endif %}
+						{% endif %}
 						{% if cash and points %}and{% endif %}
 						{% if points %}{{ points }} points{% endif %}
 						</span>
