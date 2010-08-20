@@ -1,9 +1,4 @@
 cron:
-- description: remove duplicate availabilities
-  url: /cron/remove-duplicate-availabilitles?limit=500&cron=true
-  schedule: every 1 minutes
-  
-  
 - description: geocode hotels
   url: /cron/geocode
   schedule: every 15 minutes
