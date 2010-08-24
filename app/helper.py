@@ -1,3 +1,4 @@
+import re
 import os
 import unicodedata
 import random
@@ -13,8 +14,10 @@ import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
-def init_template_values(user=None):    
-	return {}
+def init_template_values(init_dict={}, user=None, uses_google_maps=False):
+	t = {'uses_google_maps': uses_google_maps}
+	t.update(init_dict)
+	return t
 
 def get_template_path(template_name, extension=None):
 	return os.path.join(os.path.dirname(__file__), "templates/%s.%s" \
@@ -30,8 +33,10 @@ def str_to_date(s):
 def date_to_str(d):
 	return d.strftime("%Y-%m-%d")
 
-def slugify(text, separator):
+def slugify(text, separator="-"):
 	ret = ""
+	
+	text = remove_accents(text)
 	for c in text.lower():
 		try:
 			ret += htmlentitydefs.codepoint2name[ord(c)]
