@@ -94,7 +94,12 @@ class StarwoodProperty(geomodel.GeoModel):
 	
 	
 	def __str__(self):
-		return "%s (%d)" % (self.name, self.id)
+		return "%s (%d)" % (helper.remove_accents(self.name), self.id)
+		
+	def permalink(self):
+		permalink = "/hotel/starwood/%d/%s" % (self.id, helper.slugify(self.name))
+		logging.info("%s" % permalink)
+		return permalink
 	
 	@classmethod
 	def calc_key_name(cls, id=None):
@@ -133,7 +138,8 @@ class StarwoodProperty(geomodel.GeoModel):
 		return "<address>\n%s</address>\n" % address_contents
 	
 	def html_short_address(self):
-		return "<address>%s, %s</address>\n" % ((self.city, self.country), (self.city, self.state))[self.state is not None]
+		address = "<address>%s, %s</address>\n" % (self.state and (self.city, self.state) or (self.city, self.country))
+		return address
 	
 	def encoded_full_address(self, with_address2=True):
 		return self.full_address(encoded=True, with_address2=with_address2)
@@ -149,6 +155,18 @@ class StarwoodProperty(geomodel.GeoModel):
 			return urllib.quote_plus(full_address.encode('utf-8'))
 		else:
 			return full_address
+	
+	def image(self, size='small'):
+		size_map = {'small': 'tn', 'medium': 'md', 'large': 'lg'}
+		image_url = self.image_url.replace('_tn.jpg', '_%s.jpg' % size_map.get(size))
+		logging.info("%s" % image_url)
+		return image_url
+
+	def image_medium(self):
+		return self.image(size='medium')
+	
+	def image_large(self):
+		return self.image(size='large')
 		
 	def geocode(self):
 		coord = None
@@ -202,7 +220,7 @@ class StarwoodProperty(geomodel.GeoModel):
 		
 	@staticmethod
 	def get_by_id(id=None):
-		return id and StarwoodProperty.all().filter('id =', id).get() or None
+		return id and StarwoodProperty.all().filter('id =', int(id)).get() or None
 
 	@staticmethod
 	def get_by_prop(prop=None, value=None):
