@@ -16,8 +16,6 @@
 			var nearest_hotels = [];
 			{% endif %}
 		</script>
-		<script src="http://www.google.com/jsapi?key=ABQIAAAAbS93tJ_uidHDZWvF7euCFBRZY0UO5Ce9jhJtaWkDUN0I_qaxZRSYddpKWN0rTK8azJFokggtQdZ7FQ"></script>
-		<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
 		<script src="/static2/js/search.js"></script>
 {% endblock %}
 
@@ -95,7 +93,16 @@
 									</div>
 								
 									<div class="hotel_info">
-										<h3 class="hotel_name">{{ hotel_data.0.name }}</h3>
+										<h3 class="hotel_name">
+											{{ hotel_data.0.name }}
+											<img class="crosshair" src="/static2/images/crosshairs.png" 
+												alt="Focus on this hotel"
+												title="Focus on this hotel" />
+											
+											{% comment %}
+											<a href="{{ hotel.permalink }}">{{ hotel_data.0.name }}</a>
+											{% endcomment %}
+										</h3>
 										
 										{{ hotel_data.0.html_short_address }} -
 										<span class="category">Category {{ hotel_data.0.category }}</span>
@@ -194,7 +201,13 @@
 									</div>
 								
 									<div class="hotel_info">
-										<h3 class="hotel_name">{{ hotel.name }}</h3>
+										<h3 class="hotel_name">
+											{{ hotel.name }}
+											
+											{% comment %}
+											<a href="{{ hotel.permalink }}">{{ hotel.name }}</a>
+											{% endcomment %}
+										</h3>
 										
 										{{ hotel.html_short_address }} -
 										<span class="category">Category {{ hotel.category }}</span>
@@ -209,6 +222,9 @@
 				</div>
 				<div class="prefix_1 grid_8">
 					<div id="hotels_map_wrapper">
+						{% comment %}
+						<h2>Hotels map</h2>
+						{% endcomment %}
 						<div id="hotels_map"></div>
 					</div>
 				</div>
