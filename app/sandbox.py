@@ -1,9 +1,10 @@
+import re
 import os
-import urllib
 import random
 import datetime
 import wsgiref.handlers
 import StringIO
+import urllib
 import urllib2
 import csv
 
@@ -22,6 +23,7 @@ from app import resources
 try: import json
 except ImportError: import simplejson as json
 
+from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 from lib.geomodel import geomodel
 
 import logging
@@ -199,8 +201,62 @@ class ShowCountries(webapp.RequestHandler):
 				self.response.out.write("%d. %s => %s\n" % (i + 1, country, countries[country]))
 
 
+class HiltonFlex(webapp.RequestHandler):
+	def get(self):
+		'''
+		http://doubletree.hilton.com/en/dt/hotels/index.jhtml;jsessionid=WETF4UTFTLNGYCSGBIY222Q?ctyhocn=CHINPDT
+		'''
+		hotel_url = "http://doubletree1.hilton.com/en_US/dt/hotel/CHINPDT-theWit-A-Doubletree-Hotel-Illinois/index.do"
+		hotel_response = urlfetch.fetch(url=hotel_url)
+		
+		
+class HiltonLogin(webapp.RequestHandler):
+	def get(self):
+		base_url = "https://secure.hilton.com%s"
+		login_landing_url = base_url % "/en/hhonors/login/login.jhtml"
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		response = urlfetch.fetch(url=login_landing_url)
+		session_cookie = response.headers.get('Set-Cookie').split(';')[0]
+		self.response.out.write("session_cookie: %s\n" % session_cookie)
+		loginForm = BeautifulSoup(response.content).find('form', attrs={'name': 'loginForm'})
+		action_url = base_url % loginForm.get("action")
+		self.response.out.write("action: %s\n\n" % action_url)
+		
+		params = {"Username": "mshafrir", "password": "Jordan23"}
+		for inputEl in loginForm.findAll('input'):
+			if inputEl.get('value'):
+				params[inputEl.get("name")] = inputEl.get("value")
+		
+		form_data = urllib.urlencode(params)
+		form_data = "%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeat=0&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeat=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeatErrorURL=%2Fen%2Fhhonors%2Fhelp%2Fsign_in_help.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeatErrorURL=+&prevPageTitle=Login+Page&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=%2Fen%2Fhhonors%2Fmytravelplanner%2Fmy_account.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=%2Fen%2Fhhonors%2Fmytravelplanner%2Fmy_account.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.failureURL=%2Fen%2Fhhonors%2Flogin%2Flogin.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.failureURL=+&Username=mshafrir&_D%3AUsername=+&password=Jordan23&_D%3Apassword=+&_D%3ArememberUser=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.submit.x=8&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.submit.y=12&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.submit=+&brandCode=HH&joinHHonorsURL=%2Fen%2Fhhonors%2Fsignup%2Fhhonors_enroll.jhtml&sessionExchangePrefix=http%3A%2F%2Fhhonors1.hilton.com&page_width=784px&align=left&isStaticMasthead=true&show_signin=false"
+		self.response.out.write("form_data: %s\n\n" % form_data)
+		
+		response = urlfetch.fetch(url=action_url, deadline=10, method=urlfetch.POST, payload=form_data, follow_redirects=False, \
+					headers={'Content-Type': 'application/x-www-form-urlencoded', 'Referer': 'https://secure.hilton.com/en/hhonors/login/login.jhtml', 'Cookie': session_cookie})
+		logged_in_url = base_url % response.headers.get('location').split('?')[0]
+		session_id = logged_in_url.split(';')[1].split('=')[1]
+		
+		self.response.out.write("logged_in_url: %s" % logged_in_url)
+		
+		self.response.out.write("\n\n=====================\n\n")
+		
+		logged_in_response = urlfetch.fetch(url=logged_in_url, deadline=10, method=urlfetch.GET, follow_redirects=False, \
+												headers={'Cookie': session_cookie})
+
+		hotel_url = "http://doubletree.hilton.com/en/dt/hotels/index.jhtml;jsessionid=%s?ctyhocn=CHINPDT" % (session_id)
+		self.response.out.write("getting: %s" % hotel_url) 
+		#http://doubletree.hilton.com/en/dt/hotels/index.jhtml;jsessionid=WETF4UTFTLNGYCSGBIY222Q?ctyhocn=CHINPDT
+		resp = urlfetch.fetch(url= hotel_url, method=urlfetch.GET, follow_redirects=True)
+		if resp:
+			self.response.out.write("\n\final_url: %s\n" % resp.final_url)
+			self.response.out.write("headers: %s\n" % resp.headers)
+
+
 def main():
 	ROUTES = [
+		('/sandbox/hiltonflex', HiltonFlex),
+		('/sandbox/hilton', HiltonLogin),
 		('/sandbox/remove-duplicate-hotel-availabilities', RemoveDuplicateHotelAvailabilities),
 		('/sandbox/countries', ShowCountries),
 		('/sandbox/availability', ShowAvailability),
