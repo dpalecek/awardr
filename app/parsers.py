@@ -69,12 +69,13 @@ class StarwoodParser(webapp.RequestHandler):
 			starwood_url = "http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&propertyId=%s&ratePlan=%s"
 			vendoori_url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s"
 			url = starwood_url % (start_date, end_date, hotel_id, ratecode)
+			
 			response = urlfetch.fetch(url=url, deadline=10)
 			if response and response.status_code == 200:
-				availability_data = json.loads(response.content)['data']
-				currency_code = availability_data['currencyCode']
+				availability_data = json.loads(response.content).get('data')
+				currency_code = availability_data.get('currencyCode')
 			
-				available_dates = availability_data['availDates']
+				available_dates = availability_data.get('availDates')
 				if available_dates:
 					for year_month_key in available_dates:
 						year, month = [int(p) for p in year_month_key.split('-')]
