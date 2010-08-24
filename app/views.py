@@ -335,13 +335,40 @@ class BrowseCountriesIndexView(webapp.RequestHandler):
 		self.response.out.write(template.render(helper.get_template_path("browse_countries"),
 								template_values))
 
+
 class BrowseView(webapp.RequestHandler):
 	def get(self):
 		self.redirect('/browse/countries')		
-		
+
+
+class HotelDetailView(webapp.RequestHandler):
+	def get(self, hotel_id, slug):
+		hotel = StarwoodProperty.get_by_id(hotel_id)
+		logging.info("hotel: %s" % hotel)
+		if not hotel:
+			self.error(500)
+		else:
+			try:
+				nights = int(self.request.get('nights', 1))
+			except:
+				nights = 1
+			nights = max(min(nights, 5), 1)
+
+			today = datetime.date.today()
+			start_date = get_start_date(self.request)
+			
+			template_values = helper.init_template_values( \
+				init_dict={'hotel': hotel, 'start_date': start_date, 'nights': nights},
+				uses_google_maps=True)
+			self.response.out.write(template.render(helper.get_template_path("hotel_detail"),
+									template_values))		
+
+
+
 
 def main():
 	ROUTES = [
+		('/hotel/starwood/(\d*)/(.*)', HotelDetailView),
 		('/browse/countries/(.*)', BrowseCountryView),
 		('/browse/countries', BrowseCountriesIndexView),
 		('/browse', BrowseView),

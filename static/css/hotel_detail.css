@@ -1,0 +1,19 @@
+#body_wrapper h1 {
+	font-size:						20px;
+	margin-bottom:					6px;
+}
+
+address {
+	font-style:						normal;
+}
+
+img#hotel_image {
+	border-radius:					8px;
+}
+
+
+#hotel_map {
+	height:							300px;
+	width:							343px;
+	margin:							10px 0;
+}
