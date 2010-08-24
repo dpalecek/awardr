@@ -203,6 +203,18 @@ $(document).ready(
 				
 				});
 			}
+			
+			
+			
+			var crosshairs = $("img.crosshair");
+			$.each(crosshairs, function(i) {
+				var crosshair = $(this);
+				crosshair.click(function() {
+					if (hotel_markers && hotel_markers.length) {
+						hotels_map.panTo(hotel_markers[i].getPosition());
+					}
+				});
+			});
 		});
 	}
 );
