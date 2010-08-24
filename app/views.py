@@ -49,6 +49,28 @@ def geocoder_service(address):
 	return None
 
 
+def get_start_date(req):
+	today = datetime.date.today()
+	
+	try:
+		month = int(req.get('month', today.month))
+	except:
+		month = today.month
+	month = max(min(month, 12), 1)
+		
+	try:
+		year = int(req.get('year', today.year))
+	except:
+		year = today.year
+	year = max(min(year, today.year + 2), today.year)
+	
+	try:
+		max_day = (calendar.mdays[month], 29)[calendar.isleap(year) and month == 2] #handle leap years
+		day = min(int(req.get('day', today.day)), max_day)
+	except:
+		day = today.day
+	
+	return max(datetime.date(year, month, day), today)
 '''
 cash & points
 https://www.starwoodhotels.com/preferredguest/booking/cash_points/rates.html?numberOfAdults=2&propertyID=1234&arrivalDate=2010-09-05&departureDate=2010-09-06
@@ -63,29 +85,9 @@ class SearchView(webapp.RequestHandler):
 		except:
 			nights = 1
 		nights = max(min(nights, 5), 1)
-		
+
 		today = datetime.date.today()
-		
-		try:
-			month = int(self.request.get('month', today.month))
-		except:
-			month = today.month
-		month = max(min(month, 12), 1)
-			
-		try:
-			year = int(self.request.get('year', today.year))
-		except:
-			year = today.year
-		year = max(min(year, today.year + 2), today.year)
-		
-		try:
-			max_day = (calendar.mdays[month], 29)[calendar.isleap(year) and month == 2] #handle leap years
-			day = min(int(self.request.get('day', today.day)), max_day)
-		except:
-			day = today.day
-		
-		start_date = max(datetime.date(year, month, day), today)
-		
+		start_date = get_start_date(self.request)		
 		
 		where = self.request.get('where', default_value='').strip()
 		if where:
