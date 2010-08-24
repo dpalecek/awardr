@@ -134,7 +134,7 @@ class SearchView(webapp.RequestHandler):
 					hotels_tuple[1].append(hotel)
 				
 		
-		template_values = { \
+		template_values = helper.init_template_values(init_dict={ \
 			'start_date': start_date,
 			'days': xrange(1,32), 'months': MONTHS,
 			'years': xrange(today.year, today.year + 3),
@@ -143,7 +143,7 @@ class SearchView(webapp.RequestHandler):
 			'user_location': geo_loc, 'foo': 0,
 			'hotels_tuple': hotels_tuple,
 			'nearest_hotels_json': [hotel.props() for hotel in nearest_hotels]
-		}
+		}, uses_google_maps=True)
 		self.response.out.write(template.render(helper.get_template_path("search"),
 								template_values))
 		
@@ -255,45 +255,46 @@ class RateLookupView(webapp.RequestHandler):
 				date_ym = "%d-%02d" % (year, month)
 				avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
 																	start_date=date_ym, end_date=date_ym)
-																
-				currency_code = avail_data.get('currency_code')
+				if avail_data:												
+					currency_code = avail_data.get('currency_code')
 
-				try:
-					night = avail_data['availability'][year][month][day][1]
-				except:
-					night = None
+					try:
+						night = avail_data['availability'][year][month][day][1]
+					except:
+						night = None
 			
-				template_values['found'] = (night and (night.get('rate') or night.get('points') or night.get('pts'))) is not None
-				if template_values['found']:
-					template_values['currency_code'] = avail_data['currency_code']
-					template_values['cash'] = night.get('rate')
-					template_values['points'] = night.get('points') or night.get('pts')
+					template_values['found'] = (night and (night.get('rate') or night.get('points') or night.get('pts'))) is not None
+					if template_values['found']:
+						template_values['currency_code'] = avail_data['currency_code']
+						template_values['cash'] = night.get('rate')
+						template_values['points'] = night.get('points') or night.get('pts')
 				
-					logging.info("\n\n\n%s\n\n\n" % template_values)
+						logging.info("\n\n\n%s\n\n\n" % template_values)
 				
-					ratecode_key_name = StarwoodRatecode.calc_key_name(ratecode)
-					ratecode_entity = StarwoodRatecode.get_by_key_name(ratecode_key_name)
-					if not ratecode_entity:
-						ratecode_entity = StarwoodRatecode(key_name=ratecode_key_name, ratecode=ratecode)
-						ratecode_entity.put()
+						ratecode_key_name = StarwoodRatecode.calc_key_name(ratecode)
+						ratecode_entity = StarwoodRatecode.get_by_key_name(ratecode_key_name)
+						if not ratecode_entity:
+							ratecode_entity = StarwoodRatecode(key_name=ratecode_key_name, ratecode=ratecode)
+							ratecode_entity.put()
 					
-					rate_lookup_key_name = StarwoodRateLookup.calc_key_name(hotel, ratecode_entity.ratecode, helper.str_to_date(date))
-					rate_lookup_entity = StarwoodRateLookup.get_by_key_name(rate_lookup_key_name)
-					if not rate_lookup_entity:
-						rate_lookup_entity = StarwoodRateLookup(key_name=rate_lookup_key_name, hotel=hotel, \
-																ratecode=ratecode_entity, date=helper.str_to_date(date))
+						rate_lookup_key_name = StarwoodRateLookup.calc_key_name(hotel, ratecode_entity.ratecode, helper.str_to_date(date))
+						rate_lookup_entity = StarwoodRateLookup.get_by_key_name(rate_lookup_key_name)
+						if not rate_lookup_entity:
+							rate_lookup_entity = StarwoodRateLookup(key_name=rate_lookup_key_name, hotel=hotel, \
+																	ratecode=ratecode_entity, date=helper.str_to_date(date))
 				
-					if template_values['cash'] or template_values['points']:
-						if template_values['cash']:
-							rate_lookup_entity.cash = template_values['cash']
-						if template_values['points']:
-							rate_lookup_entity.points = template_values['points']
-						rate_lookup_entity.put()
+						if template_values['cash'] or template_values['points']:
+							logging.info("%s" % template_values)
+							if template_values['cash']:
+								rate_lookup_entity.cash = float(template_values['cash'])
+							if template_values['points']:
+								rate_lookup_entity.points = int(template_values['points'])
+							rate_lookup_entity.put()
 					
-					if template_values['cash'] and currency_code.upper() != 'USD':
-						converted = helper.currency_conversion(currency_code, template_values['cash'])
-						if converted:
-							template_values['to_usd'] = "%.2f" % converted
+						if template_values['cash'] and currency_code.upper() != 'USD':
+							converted = helper.currency_conversion(currency_code, template_values['cash'])
+							if converted:
+								template_values['to_usd'] = "%.2f" % converted
 			
 			self.response.out.write(template.render(helper.get_template_path("ratelookup"),
 									template_values))
@@ -302,8 +303,6 @@ class RateLookupView(webapp.RequestHandler):
 
 class BrowseCountryView(webapp.RequestHandler):
 	def get(self, country_slug):
-		
-		
 		country_slug = country_slug.lower()
 		special_countries = { \
 			'georgia': 'Georgia, Republic of',
