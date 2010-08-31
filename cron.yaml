@@ -4,13 +4,21 @@ cron:
   schedule: every 15 minutes
 
 
+
 - description: fetch and process hotel availability
   url: /cron/availability
-  schedule: every 2 minutes
+  schedule: every 4 minutes
   
 - description: expire past hotel availability
   url: /cron/expire
   schedule: every 5 minutes
+  
+  
+  
+- description: lookup SET codes
+  url: /cron/setcode-lookup?hotel_id=1234&increment=100
+  schedule: every 1 minutes
+  
   
   
 - description: fetch new Category 1 properties from Starwood directory

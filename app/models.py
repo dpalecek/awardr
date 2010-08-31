@@ -307,6 +307,67 @@ class StarwoodRatecode(db.Model):
 	def calc_key_name(cls, ratecode=None):
 		return "%s_%s" % (cls.kind(), ratecode.upper())
 		
+		
+		
+class StarwoodSetCodeCounter(db.Model):
+	code = db.IntegerProperty(required=True, default=1)
+	
+	@classmethod
+	def calc_key_name(cls):
+		return "%s" % (cls.kind())
+		
+	@staticmethod
+	def lookup():
+		return StarwoodSetCodeCounter.get_by_key_name(StarwoodSetCodeCounter.calc_key_name())
+		
+	@staticmethod
+	def create():
+		counter = StarwoodSetCodeCounter(key_name=StarwoodSetCodeCounter.calc_key_name(), code=1)
+		counter.put()
+		return counter
+	
+	@staticmethod
+	def increment(inc=100):
+		counter = StarwoodSetCodeCounter.lookup()
+		if not counter:
+			counter = StarwoodSetCodeCounter.create()
+			
+		counter.code += inc
+		counter.put()
+	
+	@staticmethod
+	def current():
+		counter = StarwoodSetCodeCounter.lookup()
+		if counter:
+			return counter.code
+		else:
+			return 1
+						
+		
+
+class StarwoodSetCode(db.Model):
+	code = db.IntegerProperty(required=True)
+	name = db.StringProperty(required=True)
+	chainwide_discount = db.BooleanProperty(required=False, default=False)
+	chainwide_rate = db.BooleanProperty(required=False, default=False)
+	added = db.DateTimeProperty(auto_now_add=True)
+
+	@classmethod
+	def calc_key_name(cls, code=None):
+		return "%s_%d" % (cls.kind(), code)
+		
+	@staticmethod
+	def create(code=None, name=None):
+		if code and name:
+			set_code_entity = StarwoodSetCode(key_name=StarwoodSetCode.calc_key_name(code), \
+												code=code, name=name, \
+												chainwide_discount=(name == "Chainwide Discount"), \
+												chainwide_rate=(name == "Chainwide Rate"))
+			set_code_entity.put()
+			return set_code_entity
+			
+		return None
+		
 	
 class StarwoodRateLookup(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)

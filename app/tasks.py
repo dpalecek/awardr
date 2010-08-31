@@ -5,13 +5,15 @@ from google.appengine.api.labs import taskqueue
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.api import urlfetch
 from google.appengine.api.labs import taskqueue
 from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
-from app.models import StarwoodProperty, StarwoodDateAvailability
+from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode
 import app.helper as helper
 
+from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 from lib.dateutil.relativedelta import relativedelta
 
 import logging
@@ -210,8 +212,64 @@ class StarwoodPropertyProcesser(webapp.RequestHandler):
 				self.response.out.write("Did not find prop id %d." % (prop_id))
 
 
+
+class SetCodeLookupTask(webapp.RequestHandler):
+	def get(self):
+		def valid_setcode(soup):
+			try:
+				top_msg_div = soup.find('div', attrs={'id': 'topMsgDiv'})
+				if top_msg_div.find('span', attrs={'class': 'error'}) and bool(top_msg_div.find('p').contents[0].strip()):
+					return False
+				else:
+					return True
+			except:
+				return True
+
+
+		self.response.headers['Content-Type'] = 'text/plain'
+
+		try:
+			set_code = int(self.request.get('set_code', 0))
+		except:
+			set_code = None
+		if StarwoodSetCode.get_by_key_name(StarwoodSetCode.calc_key_name(set_code)):
+			self.response.out.write("SET code entity already created.")
+			return
+
+		try:
+			hotel_id = int(self.request.get('hotel_id', 0))
+		except:
+			hotel_id = None
+
+		name = None
+
+		if set_code and hotel_id:
+			check_in = date.today() + relativedelta(months=1)
+			check_out = check_in + relativedelta(days=1)
+			#url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?corporateAccountNumber=%d&lengthOfStay=1&roomOccupancyTotal=001&requestedChainCode=SI&requestedAffiliationCode=SI&theBrand=SPG&submitActionID=search&arrivalDate=2010-09-15&departureDate=2010-09-16&propertyID=%d&ciDate=09/15/2010&coDate=09/19/2010&numberOfRooms=01&numberOfAdults=01&roomBedCode=&ratePlanName=&accountInputField=57464&foo=5232"
+			url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?arrivalDate=%s&departureDate=%s&corporateAccountNumber=%d&propertyID=%d" \
+					% (helper.date_to_str(check_in), helper.date_to_str(check_out), set_code, hotel_id)
+			response = urlfetch.fetch(url, deadline=10)
+
+			soup = BeautifulSoup(response.content)
+			if valid_setcode(soup):
+				try:
+					name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
+				except:
+					pass
+
+		if name:
+			e = StarwoodSetCode.create(set_code, name)
+			self.response.out.write("Valid SET code.  Created entity.\n\n%s" % ({e.code: str(e.name)}))
+
+		else:
+			self.response.out.write("Invalid SET code.")
+
+
+
 def main():
 	ROUTES = [
+		('/tasks/setcode', SetCodeLookupTask),
 		('/tasks/availability/process', ProcessStarwoodAvailability),
 		('/tasks/availability/fetch', FetchStarwoodAvailability),
 		('/tasks/hotel', StarwoodPropertyProcesser),

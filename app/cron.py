@@ -13,7 +13,7 @@ from google.appengine.api.labs import taskqueue
 from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
-from app.models import StarwoodProperty, StarwoodDateAvailability
+from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCodeCounter
 import app.helper as helper
 
 from lib.BeautifulSoup import BeautifulSoup
@@ -281,9 +281,50 @@ class RemoveDuplicateAvailabilities(webapp.RequestHandler):
 			db.delete(avails_to_del[:500])	
 
 
+class CronSetCodeLookup(webapp.RequestHandler):
+	def get(self):
+		queue_name = "setcode-lookup"
+		
+		try:
+			increment = int(self.request.get('increment', default_value=100))
+		except:
+			increment = 100
+			
+		try:
+			hotel_id = int(self.request.get('hotel_id', default_value=1234))
+		except:
+			hotel_id = 1234
+		
+		self.response.headers['Content-Type'] = 'text/plain'
+		self.response.out.write('Creating SET lookup tasks...\n')
+		
+		counter = StarwoodSetCodeCounter.lookup()
+		if not counter:
+			counter = StarwoodSetCodeCounter.create()
+		
+		for code in xrange(counter.code, counter.code + increment):
+			task_name = "setcode-%d-%d" % (code, int(time.time()))
+			task = taskqueue.Task(url='/tasks/setcode', \
+									name=task_name, method='GET', \
+									params={'set_code': code, 'hotel_id': hotel_id})
+
+			try:
+				task.add(queue_name)
+				self.response.out.write("Added task '%s' to task queue '%s'.\n" \
+										% (task.name, queue_name))
+			except TaskAlreadyExistsError:
+				self.response.out.write("Task '%s' already exists in task queue '%s'.\n" \
+										% (task.name, queue_name))
+			except TombstonedTaskError:
+				self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" \
+										% (task.name, queue_name))
+										
+		StarwoodSetCodeCounter.increment(increment)
+		
 
 def main():
 	ROUTES = [
+		('/cron/setcode-lookup', CronSetCodeLookup),
 		('/cron/remove-duplicate-availabilities', RemoveDuplicateAvailabilities),
 		('/cron/locationless', LocationlessHotels),
 		('/cron/refresh-hotel', CronRefreshHotelInfo),

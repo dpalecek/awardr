@@ -10,3 +10,7 @@ queue:
 - name: process-starwood-availability
   rate: 20/s
   bucket_size: 20
+  
+- name: setcode-lookup
+  rate: 20/s
+  bucket_size: 20
