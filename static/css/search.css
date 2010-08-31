@@ -69,8 +69,8 @@ form#search_form input.fancybutton {
 }
 
 #nearest_hotels_container ol.hotels_list li.hotel {
-	margin:						0 4px 0 4px;
-	padding:					8px 8px 10px;
+	margin:						0 4px;
+	padding:					16px 8px;
 	clear:						both;
 	border-top:					1px dotted #ccc;
 	font-size:					12px;
@@ -113,12 +113,19 @@ p#no_hotels_found {
 	font-size:					11px;
 }
 
-#nearest_hotels_container ol.hotels_list li .hotel_name {
+#nearest_hotels_container ol.hotels_list li h3.hotel_name {
 	display:					block;
-	font-size:					14px;
+	font-size:					12px;
 	font-weight:				bold;
 	margin:						0;
 	padding:					0;
+	color:						#231e23;
+}
+
+#nearest_hotels_container ol.hotels_list li h3.hotel_name a {
+	border-bottom:				1px solid #aaa;
+	color:						inherit;
+	text-decoration:			none;
 }
 
 #nearest_hotels_container ol.hotels_list li img.crosshair {

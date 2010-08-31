@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block head_title %}awardpad - search results for "{{ where }}"{% endblock %}
+
 {% block head_extended %}
 		<link rel="stylesheet" type="text/css" href="/static2/css/search.css" />
 
@@ -87,6 +89,14 @@
 							{% for hotel_data in hotels_tuple.0 %}
 								<li class="hotel {% cycle odd,even %} {% if forloop.first %}first{%endif%}">
 									<div class="hotel_sidebar">
+										{% comment %}
+										<span class="crosshair">
+										<img class="crosshair" src="/static2/images/crosshairs.png" 
+											alt="Focus on this hotel"
+											title="Focus on this hotel" /> Focus
+										</span>
+										{% endcomment %}
+											
 										<img src="{{ hotel_data.0.image_url }}"
 											class="hotel_image tiny"
 										 	alt="{{ hotel_data.0.name }}" />
@@ -94,14 +104,7 @@
 								
 									<div class="hotel_info">
 										<h3 class="hotel_name">
-											{{ hotel_data.0.name }}
-											<img class="crosshair" src="/static2/images/crosshairs.png" 
-												alt="Focus on this hotel"
-												title="Focus on this hotel" />
-											
-											{% comment %}
-											<a href="{{ hotel.permalink }}">{{ hotel_data.0.name }}</a>
-											{% endcomment %}
+											<a href="#">{{ hotel_data.0.name }}</a>
 										</h3>
 										
 										{{ hotel_data.0.html_short_address }} -

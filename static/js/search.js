@@ -1,7 +1,7 @@
 $(document).ready(
 	function() {
 		var $scrollingDiv = $("#hotels_map_wrapper");
-		var max_margin_top = $(document).height() - $scrollingDiv.height() - 200;
+		var max_margin_top = $(document).height() - $scrollingDiv.height() - 220;
 		$(window).scroll(function() {
 			var margin_top = Math.max($(window).scrollTop() + 30, 0);
 			margin_top = Math.min(margin_top, max_margin_top);
@@ -194,22 +194,12 @@ $(document).ready(
 
 			});
 			
-			if (google.loader.ClientLocation) {
-			}
 			
-			var hotel_names = $("h3.hotel_name");
-			if (hotel_names.length > 0) {
-				hotel_names.click(function(event) {
-				
-				});
-			}
-			
-			
-			
-			var crosshairs = $("img.crosshair");
-			$.each(crosshairs, function(i) {
+			var hotel_names = $("h3.hotel_name");		
+			$.each(hotel_names, function(i) {
 				var crosshair = $(this);
-				crosshair.click(function() {
+				crosshair.click(function(event) {
+					event.preventDefault();
 					if (hotel_markers && hotel_markers.length) {
 						hotels_map.panTo(hotel_markers[i].getPosition());
 					}
