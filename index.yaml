@@ -43,8 +43,7 @@ indexes:
   properties:
   - name: location_geocells
   - name: location
-  
-  
+
 - kind: StarwoodSetCode
   properties:
   - name: chainwide_discount
