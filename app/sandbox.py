@@ -27,6 +27,7 @@ except ImportError: import simplejson as json
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 from lib.geomodel import geomodel
 from lib.dateutil.relativedelta import relativedelta
+from lib import mechanize
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
@@ -331,8 +332,19 @@ class SetCodeRate(webapp.RequestHandler):
 
 
 
+class MechanizeTest(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		br = mechanize.Browser()
+		br.open("http://www.example.com/")
+		self.response.out.write("title: %s" % br.title())
+		
+		
+
 def main():
 	ROUTES = [
+		('/sandbox/mechanize', MechanizeTest),
 		('/sandbox/setcoderate', SetCodeRate),
 		('/sandbox/setcodes', AllSetCodes),
 		('/sandbox/hiltonflex', HiltonFlex),
