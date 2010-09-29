@@ -65,9 +65,25 @@ else:
     def md5_digest(bytes):
         return hashlib.md5(bytes).hexdigest()
 
-
+'''
 try:
     socket._fileobject("fake socket", close=True)
+except TypeError:
+    # python <= 2.4
+    create_readline_wrapper = socket._fileobject
+else:
+    def create_readline_wrapper(fh):
+        return socket._fileobject(fh, close=True)
+'''
+try:
+    # fixed start -- fixed for gae
+    class x:
+        pass
+
+    # the x should be an object, not a string,
+    # This is the key
+    socket._fileobject(x, close=True)
+    # fixed ended
 except TypeError:
     # python <= 2.4
     create_readline_wrapper = socket._fileobject
