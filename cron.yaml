@@ -17,7 +17,7 @@ cron:
   
 - description: lookup SET codes
   url: /cron/setcode-lookup?hotel_id=1234&increment=100
-  schedule: every 1 minutes
+  schedule: every 30 minutes
   
   
   
