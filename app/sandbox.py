@@ -15,6 +15,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
+from google.appengine.api.urlfetch import DownloadError
 
 from app import helper
 from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode
@@ -250,13 +251,90 @@ class HiltonLogin(webapp.RequestHandler):
 		#http://doubletree.hilton.com/en/dt/hotels/index.jhtml;jsessionid=WETF4UTFTLNGYCSGBIY222Q?ctyhocn=CHINPDT
 		resp = urlfetch.fetch(url= hotel_url, method=urlfetch.GET, follow_redirects=True)
 		if resp:
-			self.response.out.write("\n\final_url: %s\n" % resp.final_url)
+			self.response.out.write("\nfinal_url: %s\n" % resp.final_url)
 			self.response.out.write("headers: %s\n" % resp.headers)
+
+
+
+class AllSetCodes(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		prefix_len = len('StarwoodSetCode_')
+		setcode_keys = []
+		offset = 0
+		
+		r = db.Query(StarwoodSetCode, keys_only=True).filter('chainwide_rate =', False).filter('chainwide_discount =', False).order('code').fetch(limit=8000, offset=offset)
+		setcode_keys.extend(r)
+		offset = len(r)				
 			
+		
+		setcode_keys = [int(key.name()[prefix_len:]) for key in setcode_keys]
+		self.response.out.write("%s\n\n" % offset)
+		self.response.out.write("%s" % json.dumps(setcode_keys))
+
+
+
+class SetCodeRate(webapp.RequestHandler):
+	def get(self):
+		def clean_detail(soup):
+			return str(' '.join(soup.contents[0].replace('\n', ' ').split()).strip())
+			
+		def parse_rate_details(rate_row):
+			rate_details = {}
+			rate_details['bed'] = clean_detail(rate_row.find('td', attrs={'class': 'bedType'}).find('p'))
+			rate_details['room'] = clean_detail(rate_row.find('td', attrs={'class': 'roomFeatures'}).find('p'))
+			rate_details['rate'] = clean_detail(rate_row.find('td', attrs={'class': 'averageDailyRatePerRoom'}).find('p', attrs={'class': 'roomTotal'}).find('a'))
+			
+			return rate_details
+		
+		self.response.headers['Content-Type'] = 'text/plain'
+
+		try:
+			set_code = int(self.request.get('set_code', 0))
+		except:
+			set_code = None
+
+		try:
+			hotel_id = int(self.request.get('hotel_id', 0))
+		except:
+			hotel_id = None
+
+		name = None
+
+		if not (set_code and hotel_id):
+			self.response.out.write("Require set code and hotel id.\n")
+			
+		else:
+			check_in = datetime.date.today() + relativedelta(months=1)
+			check_out = check_in + relativedelta(days=1)
+			#url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?corporateAccountNumber=%d&lengthOfStay=1&roomOccupancyTotal=001&requestedChainCode=SI&requestedAffiliationCode=SI&theBrand=SPG&submitActionID=search&arrivalDate=2010-09-15&departureDate=2010-09-16&propertyID=%d&ciDate=09/15/2010&coDate=09/19/2010&numberOfRooms=01&numberOfAdults=01&roomBedCode=&ratePlanName=&accountInputField=57464&foo=5232"
+			url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?arrivalDate=%s&departureDate=%s&corporateAccountNumber=%d&propertyID=%d" \
+					% (helper.date_to_str(check_in), helper.date_to_str(check_out), set_code, hotel_id)
+			try:
+				response = urlfetch.fetch(url, deadline=10)
+			except DownloadError, details:
+				logging.error("DownloadError: %s" % details)
+				response = None
+
+			if response:
+				soup = BeautifulSoup(response.content)
+				try:
+					name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
+				except:
+					name = None
+
+				rates = [parse_rate_details(lowest_rates.parent.parent) for lowest_rates in soup.findAll('p', attrs={'class': 'roomRate lowestRateIndicator'})]
+
+				self.response.out.write("name: %s\n" % name)
+				self.response.out.write("rates: %s" % rates)
+
 
 
 def main():
 	ROUTES = [
+		('/sandbox/setcoderate', SetCodeRate),
+		('/sandbox/setcodes', AllSetCodes),
 		('/sandbox/hiltonflex', HiltonFlex),
 		('/sandbox/hilton', HiltonLogin),
 		('/sandbox/remove-duplicate-hotel-availabilities', RemoveDuplicateHotelAvailabilities),
