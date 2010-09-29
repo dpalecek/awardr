@@ -215,9 +215,11 @@ class HiltonFlex(webapp.RequestHandler):
 		
 class HiltonLogin(webapp.RequestHandler):
 	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		
 		base_url = "https://secure.hilton.com%s"
 		login_landing_url = base_url % "/en/hhonors/login/login.jhtml"
-		self.response.headers['Content-Type'] = 'text/plain'
+		
 		
 		response = urlfetch.fetch(url=login_landing_url)
 		session_cookie = response.headers.get('Set-Cookie').split(';')[0]
