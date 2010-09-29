@@ -6,6 +6,7 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import urlfetch
+from google.appengine.api.urlfetch import DownloadError
 from google.appengine.api.labs import taskqueue
 from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
@@ -249,14 +250,19 @@ class SetCodeLookupTask(webapp.RequestHandler):
 			#url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?corporateAccountNumber=%d&lengthOfStay=1&roomOccupancyTotal=001&requestedChainCode=SI&requestedAffiliationCode=SI&theBrand=SPG&submitActionID=search&arrivalDate=2010-09-15&departureDate=2010-09-16&propertyID=%d&ciDate=09/15/2010&coDate=09/19/2010&numberOfRooms=01&numberOfAdults=01&roomBedCode=&ratePlanName=&accountInputField=57464&foo=5232"
 			url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?arrivalDate=%s&departureDate=%s&corporateAccountNumber=%d&propertyID=%d" \
 					% (helper.date_to_str(check_in), helper.date_to_str(check_out), set_code, hotel_id)
-			response = urlfetch.fetch(url, deadline=10)
+			try:
+				response = urlfetch.fetch(url, deadline=10)
+			except DownloadError, details:
+				logging.error("DownloadError: %s" % details)
+				response = None
 
-			soup = BeautifulSoup(response.content)
-			if valid_setcode(soup):
-				try:
-					name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
-				except:
-					pass
+			if response:
+				soup = BeautifulSoup(response.content)
+				if valid_setcode(soup):
+					try:
+						name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
+					except:
+						name = None
 
 		if name:
 			e = StarwoodSetCode.create(set_code, name)
