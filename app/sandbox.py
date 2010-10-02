@@ -7,6 +7,8 @@ import StringIO
 import urllib
 import urllib2
 import csv
+import cookielib
+
 
 from collections import defaultdict
 
@@ -220,43 +222,51 @@ class HiltonLogin(webapp.RequestHandler):
 		base_url = "https://secure.hilton.com%s"
 		login_landing_url = base_url % "/en/hhonors/login/login.jhtml"
 		
+		br = mechanize.Browser()
 		
-		response = urlfetch.fetch(url=login_landing_url)
-		session_cookie = response.headers.get('Set-Cookie').split(';')[0]
-		self.response.out.write("session_cookie: %s\n" % session_cookie)
-		loginForm = BeautifulSoup(response.content).find('form', attrs={'name': 'loginForm'})
-		action_url = base_url % loginForm.get("action")
-		self.response.out.write("action: %s\n\n" % action_url)
+		br.set_cookiejar(cookielib.LWPCookieJar())
+		br.set_handle_equiv(True)
+		br.set_handle_gzip(True)
+		br.set_handle_redirect(True)
+		br.set_handle_referer(True)
+		br.set_handle_robots(False)
+		br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
 		
-		params = {"Username": "mshafrir", "password": "Jordan23"}
-		for inputEl in loginForm.findAll('input'):
-			if inputEl.get('value'):
-				params[inputEl.get("name")] = inputEl.get("value")
+		br.open("http://doubletree1.hilton.com/en_US/dt/hotel/CHINPDT-theWit-A-Doubletree-Hotel-Illinois/index.do")
+		a = br.select_form(name="rewardSearch")
+		logging.info("%s" % a)
+		br.form.set_all_readonly(False)
+		br.form.find_control(name="flexCheckInDay", kind="list").value = ["3"]
+		br.form.find_control(name="flexCheckInMonthYr", kind="list").value = ["December 2010"]
+		br.form.find_control(name="checkInDay", kind="list").value = ["3"]
+		br.form.find_control(name="checkInMonthYr", kind="list").value = ["December 2010"]
+		br.form.find_control(name="checkOutDay", kind="list").value = ["5"]
+		br.form.find_control(name="checkOutMonthYr", kind="list").value = ["December 2010"]
+		br.form.find_control(name="los", kind="list").value = ["2"]
+		br.form["isReward"] = "true"
+		br.form["flexibleSearch"] = "true"
+		br.form["source"] = "hotelResWidget"
+		br.submit()
 		
-		form_data = urllib.urlencode(params)
-		form_data = "%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeat=0&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeat=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeatErrorURL=%2Fen%2Fhhonors%2Fhelp%2Fsign_in_help.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.repeatErrorURL=+&prevPageTitle=Login+Page&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=%2Fen%2Fhhonors%2Fmytravelplanner%2Fmy_account.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=%2Fen%2Fhhonors%2Fmytravelplanner%2Fmy_account.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.successURL=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.failureURL=%2Fen%2Fhhonors%2Flogin%2Flogin.jhtml&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.failureURL=+&Username=mshafrir&_D%3AUsername=+&password=Jordan23&_D%3Apassword=+&_D%3ArememberUser=+&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.submit.x=8&%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.submit.y=12&_D%3A%2Fcom%2Fhilton%2Fcrm%2Fclient%2Fhandler%2FLoginFormHandler.submit=+&brandCode=HH&joinHHonorsURL=%2Fen%2Fhhonors%2Fsignup%2Fhhonors_enroll.jhtml&sessionExchangePrefix=http%3A%2F%2Fhhonors1.hilton.com&page_width=784px&align=left&isStaticMasthead=true&show_signin=false"
-		self.response.out.write("form_data: %s\n\n" % form_data)
-		
-		response = urlfetch.fetch(url=action_url, deadline=10, method=urlfetch.POST, payload=form_data, follow_redirects=False, \
-					headers={'Content-Type': 'application/x-www-form-urlencoded', 'Referer': 'https://secure.hilton.com/en/hhonors/login/login.jhtml', 'Cookie': session_cookie})
-		logged_in_url = base_url % response.headers.get('location').split('?')[0]
-		session_id = logged_in_url.split(';')[1].split('=')[1]
-		
-		self.response.out.write("logged_in_url: %s" % logged_in_url)
-		
-		self.response.out.write("\n\n=====================\n\n")
-		
-		logged_in_response = urlfetch.fetch(url=logged_in_url, deadline=10, method=urlfetch.GET, follow_redirects=False, \
-												headers={'Cookie': session_cookie})
 
-		hotel_url = "http://doubletree.hilton.com/en/dt/hotels/index.jhtml;jsessionid=%s?ctyhocn=CHINPDT" % (session_id)
-		self.response.out.write("getting: %s" % hotel_url) 
-		#http://doubletree.hilton.com/en/dt/hotels/index.jhtml;jsessionid=WETF4UTFTLNGYCSGBIY222Q?ctyhocn=CHINPDT
-		resp = urlfetch.fetch(url= hotel_url, method=urlfetch.GET, follow_redirects=True)
-		if resp:
-			self.response.out.write("\nfinal_url: %s\n" % resp.final_url)
-			self.response.out.write("headers: %s\n" % resp.headers)
-
+		br.select_form(name="loginForm")
+		br.form['Username'] = 'mshafrir'
+		br.form['password'] = 'Jordan23'
+		br.submit()
+		
+		for form in br.forms():
+			self.response.out.write("%s\n\n\n\n\n" % form)
+			
+		self.response.out.write("\n\n\n\n\n==============\n\n\n\n\n")
+		
+		'''
+		br.select_form(name="loginForm")
+		br.form['Username'] = 'mshafrir'
+		br.form['password'] = 'Jordan23'
+		br.submit()
+		'''
+		
+		
 
 
 class AllSetCodes(webapp.RequestHandler):
