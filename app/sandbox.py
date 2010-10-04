@@ -288,6 +288,7 @@ class AllSetCodes(webapp.RequestHandler):
 
 
 
+# /sandbox/setcoderate?hotel_id=1234&set_code=57464
 class SetCodeRate(webapp.RequestHandler):
 	def get(self):
 		def clean_detail(soup):
@@ -302,6 +303,7 @@ class SetCodeRate(webapp.RequestHandler):
 			return rate_details
 		
 		self.response.headers['Content-Type'] = 'text/plain'
+		rate_data = {}
 
 		try:
 			set_code = int(self.request.get('set_code', 0))
@@ -316,7 +318,7 @@ class SetCodeRate(webapp.RequestHandler):
 		name = None
 
 		if not (set_code and hotel_id):
-			self.response.out.write("Require set code and hotel id.\n")
+			rate_data['error'] = "Required set code and hotel id."
 			
 		else:
 			check_in = datetime.date.today() + relativedelta(months=1)
@@ -336,11 +338,14 @@ class SetCodeRate(webapp.RequestHandler):
 					name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
 				except:
 					name = None
-
+				
 				rates = [parse_rate_details(lowest_rates.parent.parent) for lowest_rates in soup.findAll('p', attrs={'class': 'roomRate lowestRateIndicator'})]
-
-				self.response.out.write("name: %s\n" % name)
-				self.response.out.write("rates: %s" % rates)
+				rate_data = {'set_code': set_code, 'hotel_id': hotel_id, \
+								'check_in': helper.date_to_str(check_in), \
+								'check_out': helper.date_to_str(check_out), \
+								'rates': rates}
+								
+		self.response.out.write("%s" % json.dumps(rate_data))
 
 
 
