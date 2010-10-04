@@ -213,58 +213,73 @@ class HiltonFlex(webapp.RequestHandler):
 		'''
 		hotel_url = "http://doubletree1.hilton.com/en_US/dt/hotel/CHINPDT-theWit-A-Doubletree-Hotel-Illinois/index.do"
 		hotel_response = urlfetch.fetch(url=hotel_url)
+
+
+
+def create_mechanize():
+	br = mechanize.Browser()
+	
+	#br.set_cookiejar() #cookielib.LWPCookieJar())
+	br.set_handle_equiv(True)
+	br.set_handle_gzip(True)
+	br.set_handle_redirect(True)
+	br.set_handle_referer(True)
+	br.set_handle_robots(False)
+	br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+	
+	return br
 		
 		
 class HiltonLogin(webapp.RequestHandler):
 	def get(self):
+		#
 		self.response.headers['Content-Type'] = 'text/plain'
+		br = create_mechanize()
 		
 		base_url = "https://secure.hilton.com%s"
 		login_landing_url = base_url % "/en/hhonors/login/login.jhtml"
 		
-		br = mechanize.Browser()
+		br.open(login_landing_url)
+		br.select_form(name="loginForm")
+		br.form['Username'] = 'mshafrir'
+		br.form['password'] = 'Jordan23'
+		br.submit()
 		
-		br.set_cookiejar(cookielib.LWPCookieJar())
-		br.set_handle_equiv(True)
-		br.set_handle_gzip(True)
-		br.set_handle_redirect(True)
-		br.set_handle_referer(True)
-		br.set_handle_robots(False)
-		br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+		soup = BeautifulSoup(br.response().read())
+		session_id = soup.find('form', attrs={'name': 'logout'})['action'].split(';jsessionid=')[1]
+
+		hotel_url = "http://doubletree.hilton.com/en/dt/hotels/index.jhtml;jsessionid=%s?ctyhocn=CHINPDT" % (session_id)
+		self.response.out.write("%s\n\n" % hotel_url)
+		br.open(hotel_url)
 		
-		br.open("http://doubletree1.hilton.com/en_US/dt/hotel/CHINPDT-theWit-A-Doubletree-Hotel-Illinois/index.do")
 		a = br.select_form(name="rewardSearch")
-		logging.info("%s" % a)
 		br.form.set_all_readonly(False)
 		br.form.find_control(name="flexCheckInDay", kind="list").value = ["3"]
 		br.form.find_control(name="flexCheckInMonthYr", kind="list").value = ["December 2010"]
-		br.form.find_control(name="checkInDay", kind="list").value = ["3"]
-		br.form.find_control(name="checkInMonthYr", kind="list").value = ["December 2010"]
-		br.form.find_control(name="checkOutDay", kind="list").value = ["5"]
-		br.form.find_control(name="checkOutMonthYr", kind="list").value = ["December 2010"]
+		#br.form.find_control(name="checkInDay", kind="list").value = ["3"]
+		#br.form.find_control(name="checkInMonthYr", kind="list").value = ["December 2010"]
+		#br.form.find_control(name="checkOutDay", kind="list").value = ["5"]
+		#br.form.find_control(name="checkOutMonthYr", kind="list").value = ["December 2010"]
 		br.form.find_control(name="los", kind="list").value = ["2"]
 		br.form["isReward"] = "true"
 		br.form["flexibleSearch"] = "true"
 		br.form["source"] = "hotelResWidget"
 		br.submit()
 		
-
+		self.response.out.write("%s\n\n" % br.geturl())
+		
 		br.select_form(name="loginForm")
 		br.form['Username'] = 'mshafrir'
 		br.form['password'] = 'Jordan23'
 		br.submit()
+		
+		self.response.out.write("%s\n\n" % br.geturl())
+
 		
 		for form in br.forms():
-			self.response.out.write("%s\n\n\n\n\n" % form)
+			pass #self.response.out.write("%s\n\n\n\n\n" % form)
 			
 		self.response.out.write("\n\n\n\n\n==============\n\n\n\n\n")
-		
-		'''
-		br.select_form(name="loginForm")
-		br.form['Username'] = 'mshafrir'
-		br.form['password'] = 'Jordan23'
-		br.submit()
-		'''
 		
 		
 
