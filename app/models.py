@@ -367,7 +367,13 @@ class StarwoodSetCode(db.Model):
 			return set_code_entity
 			
 		return None
-		
+
+class StarwoodSetCodeLookup(db.Model):
+	hotel_id = db.IntegerProperty(required=True)
+	set_code = db.IntegerProperty(required=True)
+	check_in = db.DateProperty(required=True)
+	check_out = db.DateProperty(required=True)
+	#beds = db.
 	
 class StarwoodRateLookup(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)
