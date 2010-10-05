@@ -327,13 +327,24 @@ class SetCodeRatesView(webapp.RequestHandler):
 		hotel_id = int(self.request.get('hotel_id', default_value=1234))
 		check_in = helper.str_to_date(self.request.get('check_in', default_value='2010-11-10'))
 		check_out = helper.str_to_date(self.request.get('check_out', default_value='2010-11-12'))
+		limit = int(self.request.get('limit', default_value=200))
 
-		rates = StarwoodSetCodeRate.all().filter('hotel_id =', hotel_id) \
+		rates_data = StarwoodSetCodeRate.all().filter('hotel_id =', hotel_id) \
 			.filter('check_in =', check_in) \
 			.filter('check_out =', check_out) \
-			.order('room_rate').fetch(100)
-		template_values = {'hotel_id': hotel_id, 'check_in': check_in, \
-							'check_out': check_out, 'rates': rates}
+			.order('room_rate').fetch(limit)
+		
+		'''
+		set_codes = dict((rate_data.set_code, StarwoodSetCode.get_by_key_name(StarwoodSetCode.calc_key_name(code=rate_data.set_code))) \
+						for rate_data in rates_data)
+		'''
+		for rate_data in rates_data:
+			rate_data.set_code_entity = \
+				StarwoodSetCode.get_by_key_name(StarwoodSetCode.calc_key_name(code=rate_data.set_code))
+			
+		template_values = {'hotel_id': hotel_id, 'rates_data': rates_data, \
+							'check_in': helper.date_to_str(check_in), \
+							'check_out': helper.date_to_str(check_out)}
 		self.response.out.write(template.render(helper.get_template_path("setcoderates"),
 								template_values))
 

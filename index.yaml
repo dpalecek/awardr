@@ -48,6 +48,11 @@ indexes:
   properties:
   - name: chainwide_discount
   - name: chainwide_rate
+
+- kind: StarwoodSetCode
+  properties:
+  - name: chainwide_discount
+  - name: chainwide_rate
   - name: code
 
 - kind: StarwoodSetCodeRate
@@ -57,17 +62,12 @@ indexes:
   - name: hotel_id
   - name: room_rate
 
-- kind: StarwoodSetCode
-  properties:
-  - name: chainwide_discount
-  - name: chainwide_rate
-  
 - kind: StarwoodSetCodeRate
   properties:
-  - name: check_out
+  - name: check_in
   - name: room_rate
 
 - kind: StarwoodSetCodeRate
   properties:
-  - name: check_in
+  - name: check_out
   - name: room_rate

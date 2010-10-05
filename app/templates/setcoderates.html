@@ -8,6 +8,39 @@
 				font-family: Monaco;
 				font-size: 11px;
 			}
+			
+			table {
+				border-collapse: collapse;
+			}
+			
+			table th {
+				background: #222;
+				color: #fff;
+				text-align: center;
+				font-weight: bold;
+			}
+			
+			table th,
+			table td {
+				border: 1px dotted #555;
+				padding: 4px 8px;
+			}
+			
+			table td {
+			}
+			
+			table td.counter {
+				text-align: right;
+			}
+			
+			table td.set_code {
+				text-align: center;
+			}
+			
+			table td.bed,
+			table td.rate {
+				white-space: nowrap;
+			}
 		</style>
 	</head>
 	<body>
@@ -15,9 +48,11 @@
 		<p>Check in: {{ check_in }}</p>
 		<p>Check out: {{ check_out }}</p>
 		
+		{% if rates_data %}
 		<table>
 			<thead>
 				<tr>
+					<th>#</th>
 					<th>SET Code</th>
 					<th>Bed</th>
 					<th>Description</th>
@@ -25,15 +60,23 @@
 				</tr>
 			</thead>
 			<tbody>
-				{% for rate in rates %}
+				{% for rate in rates_data %}
 				<tr>
-					<td>{{ rate.set_code }}</td>
-					<td>{{ rate.bed_count }} {{ rate.bed_type }}</td>
-					<td>{{ rate.description }}</td>
-					<td>{{ rate.room_rate }} {{ rate.currency }}</td>
+					<td class="counter">{{ forloop.counter }}</td>
+					<td class="set_code">
+						<a href="https://www.starwoodhotels.com/preferredguest/search/ratelist.html?arrivalDate={{ check_in }}&amp;departureDate={{ check_out }}&amp;corporateAccountNumber={{ rate.set_code }}&amp;propertyID={{ hotel_id }}">
+							{{ rate.set_code }}</a>
+						<br />{{ rate.set_code_entity.name }}
+					</td>
+					<td class="bed">{{ rate.bed_count }} {{ rate.bed_type }}</td>
+					<td class="description">{{ rate.description }}</td>
+					<td class="rate">{{ rate.room_rate }} {{ rate.currency }}</td>
 				</tr>
 				{% endfor %}
 			</tbody>
 		</table>
+		{% else %}
+		<p>No results.</p>
+		{% endif %}
 	</body>
 </html>

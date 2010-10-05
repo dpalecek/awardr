@@ -360,6 +360,10 @@ class StarwoodSetCode(db.Model):
 	def calc_key_name(cls, code=None):
 		return "%s_%d" % (cls.kind(), code)
 		
+	@classmethod
+	def lookup(cls, code=None):
+		return StarwoodSetCode.get_by_key_name(StarwoodSetCode.calc_key_name(code=code))
+		
 	@staticmethod
 	def create(code=None, name=None):
 		if code and name:
@@ -377,6 +381,7 @@ class StarwoodSetCodeRate(db.Model):
 	# properties to uniquely identify SET code rate
 	hotel_id = db.IntegerProperty(required=True)
 	set_code = db.IntegerProperty(required=True)
+	set_code_entity = db.ReferenceProperty(StarwoodSetCode, collection_name="setcode_set")
 	check_in = db.DateProperty(required=True)
 	check_out = db.DateProperty(required=True)
 	bed_count = db.IntegerProperty(default=0)
@@ -394,9 +399,12 @@ class StarwoodSetCodeRate(db.Model):
 	@staticmethod
 	def lookup(hotel_id, set_code, check_in, check_out, bed_count, bed_type):
 		rate_lookup = \
-			StarwoodSetCodeRate.all().filter('hotel_id =', hotel_id) \
-				.filter('set_code =', set_code).filter('check_in =', check_in) \
-				.filter('check_out =', check_out).filter('bed_count =', bed_count) \
+			StarwoodSetCodeRate.all() \
+				.filter('hotel_id =', hotel_id) \
+				.filter('set_code =', set_code) \
+				.filter('check_in =', check_in) \
+				.filter('check_out =', check_out) \
+				.filter('bed_count =', bed_count) \
 				.filter('bed_type =', bed_type).get()
 		
 		return rate_lookup
