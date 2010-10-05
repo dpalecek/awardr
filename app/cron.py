@@ -13,7 +13,7 @@ from google.appengine.api.labs import taskqueue
 from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
-from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCodeCounter
+from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCodeCounter, StarwoodSetCode
 import app.helper as helper
 
 from lib.BeautifulSoup import BeautifulSoup
@@ -320,10 +320,53 @@ class CronSetCodeLookup(webapp.RequestHandler):
 										% (task.name, queue_name))
 										
 		StarwoodSetCodeCounter.increment(increment)
+
+
+class CronSetCodeRateLookupStarter(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		queue_name = "setcoderateblock-lookup"
 		
+		limit = int(self.request.get('limit', default_value=100))
+		hotel_id = int(self.request.get('hotel_id', default_value=1234))
+		try:
+			check_in = helper.str_to_date(self.request.get('check_in'))
+		except:
+			check_in = datetime.date.today() + relativedelta(months=1)
+		nights = int(self.request.get('nights', default_value=1))
+		check_out = check_in + relativedelta(days=nights)
+		
+		setcode_count = len(db.Query(StarwoodSetCode, keys_only=True).filter('chainwide_rate =', False).filter('chainwide_discount =', False).fetch(10000))
+		self.response.out.write("StarwoodSetCode count: %d\n\n" % setcode_count)
+		
+		for i, offset in enumerate(xrange(0, setcode_count, limit)):
+			task_name = "setcoderate-block-%d-%s-%s-%d-%d-%d" \
+							% (hotel_id, \
+								''.join(helper.date_to_str(check_in).split('-')), \
+								''.join(helper.date_to_str(check_out).split('-')), \
+								offset, offset + limit, int(time.time()))
+												
+			task = taskqueue.Task(url='/tasks/%s' % queue_name, \
+									name=task_name, method='GET', \
+									params={'hotel_id': hotel_id, \
+											'check_in': check_in, \
+											'check_out': check_out,
+											'offset': offset,
+											'limit': limit})
+
+			d = (i + 1, task.name, queue_name)
+			try:
+				task.add(queue_name)
+				self.response.out.write("%d.\tAdded task '%s' to task queue '%s'.\n" % d)
+			except TaskAlreadyExistsError:
+				self.response.out.write("%d.\tTask '%s' already exists in task queue '%s'.\n" % d)
+			except TombstonedTaskError:
+				self.response.out.write("%d.\tTask '%s' is tombstoned in task queue '%s'.\n" % d)
+
 
 def main():
 	ROUTES = [
+		('/cron/setcoderate-starter', CronSetCodeRateLookupStarter),
 		('/cron/setcode-lookup', CronSetCodeLookup),
 		('/cron/remove-duplicate-availabilities', RemoveDuplicateAvailabilities),
 		('/cron/locationless', LocationlessHotels),

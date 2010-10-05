@@ -344,13 +344,17 @@ class StarwoodSetCodeCounter(db.Model):
 			return 1
 						
 		
-
 class StarwoodSetCode(db.Model):
 	code = db.IntegerProperty(required=True)
 	name = db.StringProperty(required=True)
 	chainwide_discount = db.BooleanProperty(required=False, default=False)
 	chainwide_rate = db.BooleanProperty(required=False, default=False)
 	added = db.DateTimeProperty(auto_now_add=True)
+
+	def props(self):
+ 		return {'code': self.code, 'name': self.name, \
+				'chainwide_discount': self.chainwide_discount,
+				'chainwide_rate': self.chainwide_rate}
 
 	@classmethod
 	def calc_key_name(cls, code=None):
@@ -368,12 +372,42 @@ class StarwoodSetCode(db.Model):
 			
 		return None
 
-class StarwoodSetCodeLookup(db.Model):
+
+class StarwoodSetCodeRate(db.Model):
+	# properties to uniquely identify SET code rate
 	hotel_id = db.IntegerProperty(required=True)
 	set_code = db.IntegerProperty(required=True)
 	check_in = db.DateProperty(required=True)
 	check_out = db.DateProperty(required=True)
-	#beds = db.
+	bed_count = db.IntegerProperty(default=0)
+	bed_type = db.StringProperty(required=True)
+	
+	# extra properties
+	description = db.StringProperty()
+	currency = db.StringProperty()
+	room_rate = db.FloatProperty()
+	total_rate = db.FloatProperty()
+	
+	touched = db.DateTimeProperty(auto_now=True)
+	
+	
+	@staticmethod
+	def lookup(hotel_id, set_code, check_in, check_out, bed_count, bed_type):
+		rate_lookup = \
+			StarwoodSetCodeRate.all().filter('hotel_id =', hotel_id) \
+				.filter('set_code =', set_code).filter('check_in =', check_in) \
+				.filter('check_out =', check_out).filter('bed_count =', bed_count) \
+				.filter('bed_type =', bed_type).get()
+		
+		return rate_lookup
+	
+	@staticmethod
+	def create(hotel_id, set_code, check_in, check_out, bed_count, bed_type):
+		return StarwoodSetCodeRate(hotel_id=hotel_id, set_code=set_code, \
+				check_in=check_in, check_out=check_out, bed_count=bed_count, \
+				bed_type=bed_type)
+		
+	
 	
 class StarwoodRateLookup(db.Model):
 	hotel = db.ReferenceProperty(StarwoodProperty, required=True)

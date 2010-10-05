@@ -20,7 +20,7 @@ from google.appengine.api import urlfetch
 from google.appengine.api.urlfetch import DownloadError
 
 from app import helper
-from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode
+from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode, StarwoodSetCodeRate
 from app import resources
 
 try: import json
@@ -281,8 +281,17 @@ class HiltonLogin(webapp.RequestHandler):
 			
 		self.response.out.write("\n\n\n\n\n==============\n\n\n\n\n")
 		
-		
 
+class SetCodeLookup(webapp.RequestHandler):
+	def get(self, code):
+		self.response.headers['Content-Type'] = 'text/plain'
+		set_code_data = StarwoodSetCode.all().filter('code =', int(code)).get()
+		if set_code_data:
+			props = set_code_data.props()
+		else:
+			props = {}
+		self.response.out.write("%s" % json.dumps(props))
+		
 
 class AllSetCodes(webapp.RequestHandler):
 	def get(self):
@@ -303,67 +312,6 @@ class AllSetCodes(webapp.RequestHandler):
 
 
 
-# /sandbox/setcoderate?hotel_id=1234&set_code=57464
-class SetCodeRate(webapp.RequestHandler):
-	def get(self):
-		def clean_detail(soup):
-			return str(' '.join(soup.contents[0].replace('\n', ' ').split()).strip())
-			
-		def parse_rate_details(rate_row):
-			rate_details = {}
-			rate_details['bed'] = clean_detail(rate_row.find('td', attrs={'class': 'bedType'}).find('p'))
-			rate_details['room'] = clean_detail(rate_row.find('td', attrs={'class': 'roomFeatures'}).find('p'))
-			rate_details['rate'] = clean_detail(rate_row.find('td', attrs={'class': 'averageDailyRatePerRoom'}).find('p', attrs={'class': 'roomTotal'}).find('a'))
-			
-			return rate_details
-		
-		self.response.headers['Content-Type'] = 'text/plain'
-		rate_data = {}
-
-		try:
-			set_code = int(self.request.get('set_code', 0))
-		except:
-			set_code = None
-
-		try:
-			hotel_id = int(self.request.get('hotel_id', 0))
-		except:
-			hotel_id = None
-
-		name = None
-
-		if not (set_code and hotel_id):
-			rate_data['error'] = "Required set code and hotel id."
-			
-		else:
-			check_in = datetime.date.today() + relativedelta(months=1)
-			check_out = check_in + relativedelta(days=1)
-			#url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?corporateAccountNumber=%d&lengthOfStay=1&roomOccupancyTotal=001&requestedChainCode=SI&requestedAffiliationCode=SI&theBrand=SPG&submitActionID=search&arrivalDate=2010-09-15&departureDate=2010-09-16&propertyID=%d&ciDate=09/15/2010&coDate=09/19/2010&numberOfRooms=01&numberOfAdults=01&roomBedCode=&ratePlanName=&accountInputField=57464&foo=5232"
-			url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?arrivalDate=%s&departureDate=%s&corporateAccountNumber=%d&propertyID=%d" \
-					% (helper.date_to_str(check_in), helper.date_to_str(check_out), set_code, hotel_id)
-			try:
-				response = urlfetch.fetch(url, deadline=10)
-			except DownloadError, details:
-				logging.error("DownloadError: %s" % details)
-				response = None
-
-			if response:
-				soup = BeautifulSoup(response.content)
-				try:
-					name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
-				except:
-					name = None
-				
-				rates = [parse_rate_details(lowest_rates.parent.parent) for lowest_rates in soup.findAll('p', attrs={'class': 'roomRate lowestRateIndicator'})]
-				rate_data = {'set_code': set_code, 'hotel_id': hotel_id, \
-								'check_in': helper.date_to_str(check_in), \
-								'check_out': helper.date_to_str(check_out), \
-								'rates': rates}
-								
-		self.response.out.write("%s" % json.dumps(rate_data))
-
-
-
 class MechanizeTest(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
@@ -372,12 +320,28 @@ class MechanizeTest(webapp.RequestHandler):
 		br.open("http://www.example.com/")
 		self.response.out.write("title: %s" % br.title())
 		
-		
+
+
+class SetCodeRatesView(webapp.RequestHandler):
+	def get(self):
+		hotel_id = int(self.request.get('hotel_id', default_value=1234))
+		check_in = helper.str_to_date(self.request.get('check_in', default_value='2010-11-10'))
+		check_out = helper.str_to_date(self.request.get('check_out', default_value='2010-11-12'))
+
+		rates = StarwoodSetCodeRate.all().filter('hotel_id =', hotel_id) \
+			.filter('check_in =', check_in) \
+			.filter('check_out =', check_out) \
+			.order('room_rate').fetch(100)
+		template_values = {'hotel_id': hotel_id, 'check_in': check_in, \
+							'check_out': check_out, 'rates': rates}
+		self.response.out.write(template.render(helper.get_template_path("setcoderates"),
+								template_values))
 
 def main():
 	ROUTES = [
+		('/sandbox/setcoderates', SetCodeRatesView),
 		('/sandbox/mechanize', MechanizeTest),
-		('/sandbox/setcoderate', SetCodeRate),
+		('/sandbox/setcode/(\d*)', SetCodeLookup),
 		('/sandbox/setcodes', AllSetCodes),
 		('/sandbox/hiltonflex', HiltonFlex),
 		('/sandbox/hilton', HiltonLogin),

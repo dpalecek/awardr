@@ -11,11 +11,14 @@ from google.appengine.api.labs import taskqueue
 from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
-from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode
+from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode, StarwoodSetCodeRate
 import app.helper as helper
 
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 from lib.dateutil.relativedelta import relativedelta
+
+try: import json
+except ImportError: import simplejson as json
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
@@ -273,8 +276,195 @@ class SetCodeLookupTask(webapp.RequestHandler):
 
 
 
+class SetCodeRateBlockLookupTask(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		queue_name = "setcoderate-lookup"
+
+		offset = int(self.request.get('offset', default_value=0))
+		limit = int(self.request.get('limit', default_value=1000))
+
+		try:
+			hotel_id = int(self.request.get('hotel_id', default_value=1234))
+		except:
+			hotel_id = 1234
+
+		try:
+			check_in = helper.str_to_date(self.request.get('check_in'))
+		except:
+			check_in = datetime.date.today() + relativedelta(months=1)
+
+		nights = int(self.request.get('nights', default_value=1))
+		check_out = check_in + relativedelta(days=nights)
+
+		self.response.out.write('Creating SET lookup tasks using hotel #%d, from %s to %s...\n' \
+									% (hotel_id, helper.date_to_str(check_in), \
+									helper.date_to_str(check_out)))
+
+		prefix_len = len('StarwoodSetCode_')
+		for i, set_code in enumerate([int(key.name()[prefix_len:]) for key in db.Query(StarwoodSetCode, keys_only=True).filter('chainwide_rate =', False).filter('chainwide_discount =', False).order('code').fetch(limit=limit, offset=offset)]):
+			task_name = "setcoderatelookup-%d-%d-%s-%s-%d" \
+							% (set_code, hotel_id, \
+								''.join(helper.date_to_str(check_in).split('-')), \
+								''.join(helper.date_to_str(check_out).split('-')), \
+								int(time.time()))
+
+			task = taskqueue.Task(url='/tasks/%s' % queue_name, \
+									name=task_name, method='GET', \
+									params={'set_code': set_code, \
+											'hotel_id': hotel_id, \
+											'check_in': check_in, \
+											'check_out': check_out})
+
+			d = (offset + i, task.name, queue_name)
+			try:
+				task.add(queue_name)
+				self.response.out.write("%d.\tAdded task '%s' to task queue '%s'.\n" % d)
+			except TaskAlreadyExistsError:
+				self.response.out.write("%d.\tTask '%s' already exists in task queue '%s'.\n" % d)
+			except TombstonedTaskError:
+				self.response.out.write("%d.\tTask '%s' is tombstoned in task queue '%s'.\n" % d)
+
+
+
+
+
+# http://localhost:8102/tasks/setcoderate-lookup?hotel_id=1234&set_code=8345&check_in=2010-11-10&check_out=2010-11-12
+# http://www.awardpad.com/tasks/setcoderate-lookup?hotel_id=1234&set_code=8345&check_in=2010-11-10&check_out=2010-11-12
+class SetCodeRateLookupTask(webapp.RequestHandler):
+	def do_lookup(self):
+		def clean_detail(soup):
+			return str(' '.join(soup.contents[0].replace('\n', ' ').split()).strip())
+		
+		def parse_rate_details(rate_row):
+			rate_details = {}
+			bed_info = clean_detail(rate_row.find('td', attrs={'class': 'bedType'}).find('p'))
+			rate_details['bed_count'], rate_details['bed_type'] = int(bed_info.split()[0]), ' '.join(bed_info.replace(' Beds', '').split()[1:])
+			rate_details['description'] = clean_detail(rate_row.find('td', attrs={'class': 'roomFeatures'}).find('p'))
+		
+			rate_cell = rate_row.find('td', attrs={'class': 'averageDailyRatePerRoom'})
+			rate_details['rate'] = {}
+		
+			try:
+				currency, room_rate = clean_detail(rate_cell.find('p')).split()
+			except:
+				room_rate = None
+		
+			if room_rate:
+				rate_details['rate']['room'] = float(room_rate)
+				rate_details['rate']['currency'] = currency
+			
+				try:
+					rate_details['rate']['total'] = float(clean_detail(rate_cell.find('p', 'roomTotal').find('a')).split()[1])
+				except:
+					pass
+		
+			return rate_details
+		
+	
+		self.response.headers['Content-Type'] = 'text/plain'
+		rate_data = {}
+
+		try:
+			set_code = int(self.request.get('set_code', 0))
+		except:
+			set_code = None
+
+		try:
+			hotel_id = int(self.request.get('hotel_id', 0))
+		except:
+			hotel_id = None
+
+		name = None
+
+		if not (set_code and hotel_id):
+			rate_data['error'] = "Required set code and hotel id."
+		
+		else:
+			try:
+				check_in = helper.str_to_date(self.request.get('check_in'))
+			except:
+				check_in = datetime.date.today() + relativedelta(months=1)
+			
+			try:
+				check_out = helper.str_to_date(self.request.get('check_out'))
+			except:
+				check_out = check_in + relativedelta(days=1)
+		
+			#url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?corporateAccountNumber=%d&lengthOfStay=1&roomOccupancyTotal=001&requestedChainCode=SI&requestedAffiliationCode=SI&theBrand=SPG&submitActionID=search&arrivalDate=2010-09-15&departureDate=2010-09-16&propertyID=%d&ciDate=09/15/2010&coDate=09/19/2010&numberOfRooms=01&numberOfAdults=01&roomBedCode=&ratePlanName=&accountInputField=57464&foo=5232"
+			url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?arrivalDate=%s&departureDate=%s&corporateAccountNumber=%d&propertyID=%d" \
+					% (helper.date_to_str(check_in), helper.date_to_str(check_out), set_code, hotel_id)
+			try:
+				response = urlfetch.fetch(url, deadline=10)
+			except DownloadError, details:
+				logging.error("DownloadError: %s" % details)
+				response = None
+
+			if response:
+				soup = BeautifulSoup(response.content)
+				try:
+					rate_name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
+				except:
+					rate_name = None
+				
+				try:
+					workflow_id = soup.find('form', attrs={'name': 'RateListForm'}).find('input', attrs={'name': 'workflowId'})['value']
+				except:
+					workflow_id = None
+			
+				rates = [parse_rate_details(lowest_rates.parent.parent) for lowest_rates in soup.findAll('p', attrs={'class': 'roomRate lowestRateIndicator'})]
+				rate_data = {'set_code': set_code, 'hotel_id': hotel_id, \
+								'check_in': helper.date_to_str(check_in), \
+								'check_out': helper.date_to_str(check_out), \
+								'rate_name': rate_name, 'rooms': rates}
+	
+		return rate_data
+	
+	
+	def get(self):
+		hotel_id = int(self.request.get('hotel_id'))
+		set_code = int(self.request.get('set_code'))
+		check_in = helper.str_to_date(self.request.get('check_in'))
+		check_out = helper.str_to_date(self.request.get('check_out'))
+		
+		#if False:
+		url = "http://%s/sandbox/setcoderate?hotel_id=%d&set_code=%d&check_in=%s&check_out=%s" % \
+				(self.request.headers.get('host'), hotel_id, set_code, helper.date_to_str(check_in), helper.date_to_str(check_out))
+	
+		rate_details = self.do_lookup() #json.loads(urlfetch.fetch(url, deadline=10).content)
+		logging.info("%s\n\n" % json.dumps(rate_details))
+		
+		msg = "SetCodeRateLookupTask: %s\n" % json.dumps({'hotel_id': hotel_id, 'set_code': set_code})
+		logging.info(msg)
+		self.response.out.write(msg)
+		
+		for room in rate_details.get('rooms'):
+			pk = (hotel_id, set_code, check_in, check_out, room['bed_count'], room['bed_type'])
+			rate_lookup = StarwoodSetCodeRate.lookup(*pk)
+			
+			new_room = False
+			if not rate_lookup:
+				new_room = True
+				rate_lookup = StarwoodSetCodeRate.create(*pk)
+
+			rate_lookup.description = room['description']
+			rate_data = room['rate']
+			rate_lookup.currency = rate_data.get('currency', 'USD')
+			rate_lookup.room_rate = rate_data['room']
+			rate_lookup.total_rate = rate_data.get('total')
+		
+			rate_lookup.put()
+			
+			room_msg = "\t%s room: %s\n" % (["OLD", "NEW"][new_room], json.dumps({'room_rate': rate_lookup.room_rate, 'bed_count': room['bed_count'], 'bed_type': room['bed_type']}))
+			logging.info(room_msg)
+			self.response.out.write(room_msg)
+			
+
+
 def main():
 	ROUTES = [
+		('/tasks/setcoderateblock-lookup', SetCodeRateBlockLookupTask),
+		('/tasks/setcoderate-lookup', SetCodeRateLookupTask),
 		('/tasks/setcode', SetCodeLookupTask),
 		('/tasks/availability/process', ProcessStarwoodAvailability),
 		('/tasks/availability/fetch', FetchStarwoodAvailability),
@@ -282,6 +472,7 @@ def main():
 	]
 	application = webapp.WSGIApplication(ROUTES, debug=True)
 	run_wsgi_app(application)
+
 
 
 if __name__ == "__main__":

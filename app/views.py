@@ -362,9 +362,9 @@ class HotelDetailView(webapp.RequestHandler):
 				init_dict={'hotel': hotel, 'start_date': start_date, 'nights': nights},
 				uses_google_maps=True)
 			self.response.out.write(template.render(helper.get_template_path("hotel_detail"),
-									template_values))		
-
-
+									template_values))
+				
+		
 
 
 def main():

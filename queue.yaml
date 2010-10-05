@@ -14,3 +14,13 @@ queue:
 - name: setcode-lookup
   rate: 20/s
   bucket_size: 20
+  
+- name: setcoderate-lookup
+  rate: 20/s
+  bucket_size: 20
+
+- name: setcoderateblock-lookup
+  rate: 20/s
+  bucket_size: 20
+
+

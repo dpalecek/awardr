@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<title>SET Code Rate Lookup</title>
+		<style type="text/css">
+			body, table, td {
+				font-family: Monaco;
+				font-size: 11px;
+			}
+		</style>
+	</head>
+	<body>
+		<p>Hotel id: {{ hotel_id }}</p>
+		<p>Check in: {{ check_in }}</p>
+		<p>Check out: {{ check_out }}</p>
+		
+		<table>
+			<thead>
+				<tr>
+					<th>SET Code</th>
+					<th>Bed</th>
+					<th>Description</th>
+					<th>Room Rate</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for rate in rates %}
+				<tr>
+					<td>{{ rate.set_code }}</td>
+					<td>{{ rate.bed_count }} {{ rate.bed_type }}</td>
+					<td>{{ rate.description }}</td>
+					<td>{{ rate.room_rate }} {{ rate.currency }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</body>
+</html>
