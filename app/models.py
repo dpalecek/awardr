@@ -350,11 +350,17 @@ class StarwoodSetCode(db.Model):
 	chainwide_discount = db.BooleanProperty(required=False, default=False)
 	chainwide_rate = db.BooleanProperty(required=False, default=False)
 	added = db.DateTimeProperty(auto_now_add=True)
+	
+	is_id_required = db.BooleanProperty(default=False)
+	description = db.StringProperty()
+	
 
 	def props(self):
  		return {'code': self.code, 'name': self.name, \
-				'chainwide_discount': self.chainwide_discount,
-				'chainwide_rate': self.chainwide_rate}
+				'chainwide_discount': self.chainwide_discount, \
+				'chainwide_rate': self.chainwide_rate, \
+ 				'is_id_required': self.is_id_required, \
+				'description': self.description}
 
 	@classmethod
 	def calc_key_name(cls, code=None):
