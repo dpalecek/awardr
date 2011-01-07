@@ -38,7 +38,7 @@ class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
 	def parse_currency(hotel_id=None):
 		if hotel_id:
-			starwood_url = "http://www.starwoodhotels.com/corporate/checkAvail.do?propertyId=%s&ratePlan=%s" % (hotel_id, 'RACK')
+			starwood_url = "http://www.starwoodhotels.com/corporate/checkAvail.do?propertyId=%s&ratePrefValue=%s&ratePref=ratePlanId&numberOfRooms=1&numberOfAdults=1" % (hotel_id, 'RACK')
 			response = urlfetch.fetch(url=starwood_url, deadline=10)
 			if response and response.status_code == 200:
 				try:
@@ -66,8 +66,8 @@ class StarwoodParser(webapp.RequestHandler):
 		else:
 			availability = {}
 
-			starwood_url = "http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&propertyId=%s&ratePlan=%s"
-			vendoori_url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s"
+			starwood_url = "http://www.starwoodhotels.com/corporate/checkAvail.do?startMonth=%s&endMonth=%s&propertyId=%s&ratePrefValue=%s&ratePref=ratePlanId&numberOfRooms=1&numberOfAdults=1"
+			#vendoori_url = "http://vendoori.com/roomaward/data.json?start=%s&end=%s&hotel_id=%s&ratecode=%s"
 			url = starwood_url % (start_date, end_date, hotel_id, ratecode)
 			
 			response = urlfetch.fetch(url=url, deadline=10)
