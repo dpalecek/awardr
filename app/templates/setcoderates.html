@@ -41,12 +41,35 @@
 			table td.rate {
 				white-space: nowrap;
 			}
+			
+			form#set_lookup label {
+				display: block;
+				margin-bottom: 8px;
+			}
 		</style>
 	</head>
 	<body>
-		<p>Hotel id: {{ hotel_id }}</p>
-		<p>Check in: {{ check_in }}</p>
-		<p>Check out: {{ check_out }}</p>
+		<form action="/sandbox/setcoderates" method="post" id="set_lookup">
+			<label for="hotel_id_field">
+				Hotel id
+				<input type="text" name="hotel_id" id="hotel_id_field" maxlength="5"
+				 	value="{{ hotel_id }}" />
+			</label>
+			
+			<label for="check_in_field" />
+				Check in
+				<input type="text" name="check_in" id="check_in_field" maxlength="10"
+				 	value="{{ check_in }}" />
+			</label>
+			
+			<label for="check_out_field" />
+				Check out
+				<input type="text" name="check_out" id="check_out_field" maxlength="10"
+				 	value="{{ check_out }}" />
+			</label>
+			
+			<input type="submit" value="Lookup" />
+		</form>
 		
 		{% if rates_data %}
 		<table>
@@ -70,7 +93,7 @@
 					</td>
 					<td class="bed">{{ rate.bed_count }} {{ rate.bed_type }}</td>
 					<td class="description">{{ rate.description }}</td>
-					<td class="rate">{{ rate.room_rate }} {{ rate.currency }}</td>
+					<td class="rate">{{ rate.room_rate|floatformat:2 }} {{ rate.currency }}</td>
 				</tr>
 				{% endfor %}
 			</tbody>
