@@ -420,7 +420,19 @@ class StarwoodSetCodeRate(db.Model):
 		return StarwoodSetCodeRate(hotel_id=hotel_id, set_code=set_code, \
 				check_in=check_in, check_out=check_out, bed_count=bed_count, \
 				bed_type=bed_type)
-		
+
+
+
+class UserSetCodeRateLookup(db.Model):
+	user = db.UserProperty(required=True)
+	hotel_id = db.IntegerProperty(required=True)
+	check_in = db.DateProperty(required=True)
+	check_out = db.DateProperty(required=True)
+	added = db.DateTimeProperty(auto_now_add=True)
+
+	@classmethod
+	def calc_key_name(cls, user, hotel_id):
+		return "%s_%d-%s-%s" % (cls.kind(), hotel.id, ratecode.upper(), helper.date_to_str(date))
 	
 	
 class StarwoodRateLookup(db.Model):
