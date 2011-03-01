@@ -324,9 +324,14 @@ class MechanizeTest(webapp.RequestHandler):
 
 class SetCodeRatesView(webapp.RequestHandler):
 	def get(self):
+		template_values = {'hotel_id': 1234, 'check_in': '2011-03-03', 'check_out': '2011-03-04'}
+		self.response.out.write(template.render(helper.get_template_path("setcoderates"),
+								template_values))
+
+	def post(self):
 		hotel_id = int(self.request.get('hotel_id', default_value=1234))
-		check_in = helper.str_to_date(self.request.get('check_in', default_value='2010-11-10'))
-		check_out = helper.str_to_date(self.request.get('check_out', default_value='2010-11-12'))
+		check_in = helper.str_to_date(self.request.get('check_in', default_value='2011-03-03'))
+		check_out = helper.str_to_date(self.request.get('check_out', default_value='2011-03-04'))
 		limit = int(self.request.get('limit', default_value=200))
 
 		rates_data = StarwoodSetCodeRate.all().filter('hotel_id =', hotel_id) \
@@ -334,19 +339,16 @@ class SetCodeRatesView(webapp.RequestHandler):
 			.filter('check_out =', check_out) \
 			.order('room_rate').fetch(limit)
 		
-		'''
-		set_codes = dict((rate_data.set_code, StarwoodSetCode.get_by_key_name(StarwoodSetCode.calc_key_name(code=rate_data.set_code))) \
-						for rate_data in rates_data)
-		'''
 		for rate_data in rates_data:
 			rate_data.set_code_entity = \
 				StarwoodSetCode.get_by_key_name(StarwoodSetCode.calc_key_name(code=rate_data.set_code))
-			
+		
 		template_values = {'hotel_id': hotel_id, 'rates_data': rates_data, \
 							'check_in': helper.date_to_str(check_in), \
 							'check_out': helper.date_to_str(check_out)}
 		self.response.out.write(template.render(helper.get_template_path("setcoderates"),
 								template_values))
+								
 
 def main():
 	ROUTES = [
