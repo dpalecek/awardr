@@ -51,6 +51,24 @@ class StarwoodParser(webapp.RequestHandler):
 	
 	@staticmethod
 	def parse_availability(hotel_id, start_date, end_date=None, ratecode='SPGCP'):
+		def get_currency_code(d):
+			logging.error("d: %s" % d)
+			logging.info("foo: %s" % type(d))
+			while True:
+				if type(d) == type({}):
+					if not d.has_key('curr'):
+						logging.info("get next d")
+						d = d.get(d.keys()[0])
+					else:
+						logging.info("return the curr")
+						return d.get('curr')
+				else:
+					logging.info("not a dict, quit")
+					break
+			
+			logging.info("Returned nothing")
+			return None
+		
 		from app.models import StarwoodProperty
 		
 		if not end_date:
@@ -73,7 +91,10 @@ class StarwoodParser(webapp.RequestHandler):
 			response = urlfetch.fetch(url=url, deadline=10)
 			if response and response.status_code == 200:
 				availability_data = json.loads(response.content).get('data')
-				currency_code = availability_data.get('currencyCode')
+				
+				#currency_code = availability_data.get('currencyCode')
+				currency_code = get_currency_code(availability_data)
+				logging.error("%s" % currency_code)
 			
 				available_dates = availability_data.get('availDates')
 				if available_dates:
