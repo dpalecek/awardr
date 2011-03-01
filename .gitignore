@@ -1,3 +1,4 @@
 *.pyc
 bulkloader-log-*
 bulkloader-progress-*
+.DS_Store
