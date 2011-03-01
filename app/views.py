@@ -255,7 +255,7 @@ class RateLookupView(webapp.RequestHandler):
 				date_ym = "%d-%02d" % (year, month)
 				avail_data = StarwoodParser.parse_availability(hotel_id=hotel_id, ratecode=ratecode, \
 																	start_date=date_ym, end_date=date_ym)
-				if avail_data:												
+				if avail_data:
 					currency_code = avail_data.get('currency_code')
 
 					try:
@@ -291,7 +291,7 @@ class RateLookupView(webapp.RequestHandler):
 								rate_lookup_entity.points = int(template_values['points'])
 							rate_lookup_entity.put()
 					
-						if template_values['cash'] and currency_code.upper() != 'USD':
+						if template_values['cash'] and currency_code and currency_code.upper() != 'USD':
 							converted = helper.currency_conversion(currency_code, template_values['cash'])
 							if converted:
 								template_values['to_usd'] = "%.2f" % converted
