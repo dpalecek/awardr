@@ -1,16 +1,19 @@
-import os
-import urllib
-import random
-import datetime
-import calendar
-import wsgiref.handlers
+import os, urllib, random, datetime, calendar, wsgiref.handlers
 from collections import defaultdict
 
-from google.appengine.ext import db
-from google.appengine.ext import webapp
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
+
+from google.appengine.api import urlfetch
+from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
-from google.appengine.api import urlfetch
 
 from app import helper
 from app.models import StarwoodProperty, GeocodedLocation, StarwoodDateAvailability, StarwoodRatecode, StarwoodRateLookup
@@ -22,8 +25,6 @@ except ImportError: import simplejson as json
 from lib.geomodel import geomodel
 from lib.dateutil.relativedelta import relativedelta
 
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 template.register_template_library('app.filters')

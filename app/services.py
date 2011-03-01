@@ -1,12 +1,18 @@
-import os
-import wsgiref.handlers
+import os, wsgiref.handlers
 
-from google.appengine.ext import db
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
+
+from google.appengine.api import urlfetch, memcache
+from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp import template
-from google.appengine.api import urlfetch
-from google.appengine.api import memcache
+from google.appengine.ext.webapp.util import run_wsgi_app
 
 from app import helper
 from app.parsers import StarwoodParser
@@ -14,9 +20,6 @@ from app.models import StarwoodProperty
 
 try: import json
 except ImportError: import simplejson as json
-
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 class AllHotels(webapp.RequestHandler):
