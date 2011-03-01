@@ -1,0 +1,8 @@
+https://secure.hilton.com/en/hi/res/hhonors_flexible_dates.jhtml?checkInDay=1&_D%3AcheckInDay=+&checkInMonthYr=November+2010&_D%3AcheckInMonthYr=+&los=2&checkOutDay=3&_D%3AcheckOutDay=+&checkOutMonthYr=November+2010&_D%3AcheckOutMonthYr=+&useArrivalFields=true&%2Fcom%2Fhilton%2Fres%2Fclient%2Fhandler%2FFlexibleDatesHandler.submit=true&_D%3A%2Fcom%2Fhilton%2Fres%2Fclient%2Fhandler%2FFlexibleDatesHandler.submit=+
+
+
+https://secure.hilton.com/en/hi/res/hhonors_flexible_dates.jhtml?checkInDay=1&checkInMonthYr=November+2010&los=2&checkOutDay=3&checkOutMonthYr=November+2010&useArrivalFields=true
+
+https://secure.hilton.com/en/hi/res/hhonors_flexible_dates.jhtml;jsessionid=FSOW4CQL4OTRWCSGBJT222Q?_requestid=42112
+
+Cookie: mmcore.id=-3370532081535771249; mmcore.pd=-966426409%7C5389399193326; WT_FPC=id=98.204.217.227-1125706096.29987824:lv=1281872536784:ss=1281872303508; JSESSIONID=FSOW4CQL4OTRWCSGBJT222Q; K3R7=3-9Gafa7myHbqxGMsO-BqJd78YhvJBrWCw_XOtp0A7_0Bv6kr6wOb8g
