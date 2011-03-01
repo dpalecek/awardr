@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import time
+import re
 
 from google.appengine.api.labs import taskqueue
 from google.appengine.ext import db
@@ -13,6 +14,7 @@ from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, Tombston
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode, StarwoodSetCodeRate
 import app.helper as helper
+import app.helper_starwood as helper_starwood
 
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 from lib.dateutil.relativedelta import relativedelta
@@ -296,6 +298,8 @@ class SetCodeRateBlockLookupTask(webapp.RequestHandler):
 
 		nights = int(self.request.get('nights', default_value=1))
 		check_out = check_in + relativedelta(days=nights)
+		
+		session_cookie = json.loads(self.request.get('session_cookie'))
 
 		self.response.out.write('Creating SET lookup tasks using hotel #%d, from %s to %s...\n' \
 									% (hotel_id, helper.date_to_str(check_in), \
@@ -314,7 +318,8 @@ class SetCodeRateBlockLookupTask(webapp.RequestHandler):
 									params={'set_code': set_code, \
 											'hotel_id': hotel_id, \
 											'check_in': check_in, \
-											'check_out': check_out})
+											'check_out': check_out, \
+											'session_cookie': json.dumps(session_cookie)})
 
 			d = (offset + i, task.name, queue_name)
 			try:
@@ -341,6 +346,9 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 			bed_info = clean_detail(rate_row.find('td', attrs={'class': 'bedType'}).find('p'))
 			rate_details['bed_count'], rate_details['bed_type'] = int(bed_info.split()[0]), ' '.join(bed_info.replace(' Beds', '').split()[1:])
 			rate_details['description'] = clean_detail(rate_row.find('td', attrs={'class': 'roomFeatures'}).find('p'))
+			
+			rate_detail_id = int(re.match(r"^getRateDetail\('(\d+)', '(\w+)'\)$", rate_row.find('td', attrs={'class': 'rateDescription'}).find('a')['onclick']).group(1))
+			
 		
 			rate_cell = rate_row.find('td', attrs={'class': 'averageDailyRatePerRoom'})
 			rate_details['rate'] = {}
@@ -359,8 +367,20 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 				except:
 					pass
 		
-			return rate_details
+			return rate_details, rate_detail_id
 		
+		# https://www.starwoodhotels.com/preferredguest/search/ratedetail.html?ctx=ctxRooms&id=26370&ratePlanID=SETAND&workflow=35fdcd50-8400-4522-bbbd-bdf7773a6fa5&propertyID=1030
+		def more_rate_details(hotel_id, rate_detail_id, workflow_id, session_cookie):
+			#logging.info("session_cookie: %s" % session_cookie)
+			url = "https://www.starwoodhotels.com/preferredguest/search/ratedetail.html?ctx=ctxRooms&id=%d&ratePlanID=%s&workflow=%s&propertyID=%d&searchCode=&sortOrder=&iATANumber=#undefined" \
+ 					% (rate_detail_id, 'SETAND', workflow_id, hotel_id)
+			response = urlfetch.fetch(url, deadline=10, headers=session_cookie)
+			soup = BeautifulSoup(response.content)
+			rate_plan_desc = soup.prettify()
+			'''
+			rate_plan_desc = clean_detail(soup.find('div', text="Rate Plan Description").nextSibling.contents[0])
+			'''
+			#logging.info("\n\n\n\n%s\n\n\n\n" % rate_plan_desc)
 	
 		self.response.headers['Content-Type'] = 'text/plain'
 		rate_data = {}
@@ -390,6 +410,14 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 				check_out = helper.str_to_date(self.request.get('check_out'))
 			except:
 				check_out = check_in + relativedelta(days=1)
+			
+			try:
+				session_cookie = json.loads(self.request.get('session_cookie'))
+			except:
+				session_cookie = None
+				
+			if not session_cookie:
+				session_cookie = helper_starwood.get_session_cookie()
 		
 			#url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?corporateAccountNumber=%d&lengthOfStay=1&roomOccupancyTotal=001&requestedChainCode=SI&requestedAffiliationCode=SI&theBrand=SPG&submitActionID=search&arrivalDate=2010-09-15&departureDate=2010-09-16&propertyID=%d&ciDate=09/15/2010&coDate=09/19/2010&numberOfRooms=01&numberOfAdults=01&roomBedCode=&ratePlanName=&accountInputField=57464&foo=5232"
 			url = "https://www.starwoodhotels.com/preferredguest/search/ratelist.html?arrivalDate=%s&departureDate=%s&corporateAccountNumber=%d&propertyID=%d" \
@@ -403,7 +431,7 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 			if response:
 				soup = BeautifulSoup(response.content)
 				try:
-					rate_name = str(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p').contents[0].strip())
+					rate_name = clean_detail(soup.find('table', attrs={'id': 'rateListTable'}).find('tbody').find('tr').find('td', attrs={'class': 'rateDescription'}).find('p'))
 				except:
 					rate_name = None
 				
@@ -411,12 +439,18 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 					workflow_id = soup.find('form', attrs={'name': 'RateListForm'}).find('input', attrs={'name': 'workflowId'})['value']
 				except:
 					workflow_id = None
-			
-				rates = [parse_rate_details(lowest_rates.parent.parent) for lowest_rates in soup.findAll('p', attrs={'class': 'roomRate lowestRateIndicator'})]
+					
+				room_rates_data = []
+				for lowest_rate in soup.findAll('p', attrs={'class': 'roomRate lowestRateIndicator'}):
+					room_rate_data, rate_detail_id = parse_rate_details(lowest_rate.parent.parent)
+					room_rates_data.append(room_rate_data)
+					
+				more_rate_details(hotel_id, rate_detail_id, workflow_id, session_cookie)
+					
 				rate_data = {'set_code': set_code, 'hotel_id': hotel_id, \
 								'check_in': helper.date_to_str(check_in), \
 								'check_out': helper.date_to_str(check_out), \
-								'rate_name': rate_name, 'rooms': rates}
+								'rate_name': rate_name, 'rooms': room_rates_data}
 	
 		return rate_data
 	
@@ -427,7 +461,6 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 		check_in = helper.str_to_date(self.request.get('check_in'))
 		check_out = helper.str_to_date(self.request.get('check_out'))
 		
-		#if False:
 		url = "http://%s/sandbox/setcoderate?hotel_id=%d&set_code=%d&check_in=%s&check_out=%s" % \
 				(self.request.headers.get('host'), hotel_id, set_code, helper.date_to_str(check_in), helper.date_to_str(check_out))
 	
@@ -442,6 +475,7 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 			pk = (hotel_id, set_code, check_in, check_out, room['bed_count'], room['bed_type'])
 			rate_lookup = StarwoodSetCodeRate.lookup(*pk)
 			
+			# new room is one that isn't in the DB yet
 			new_room = False
 			if not rate_lookup:
 				new_room = True
