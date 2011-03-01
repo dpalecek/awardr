@@ -1,13 +1,9 @@
-import os
-import wsgiref.handlers
-import datetime
+import os, datetime, wsgiref.handlers
 
-from google.appengine.ext import db
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.api import users, urlfetch
+from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp import template
-from google.appengine.api import users
-from google.appengine.api import urlfetch
+from google.appengine.ext.webapp.util import run_wsgi_app
 
 import app.helper as helper
 import app.resources as resources
@@ -52,21 +48,16 @@ class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
 	def parse_availability(hotel_id, start_date, end_date=None, ratecode='SPGCP'):
 		def get_currency_code(d):
-			logging.error("d: %s" % d)
-			logging.info("foo: %s" % type(d))
 			while True:
 				if type(d) == type({}):
-					if not d.has_key('curr'):
-						logging.info("get next d")
-						d = d.get(d.keys()[0])
+					keys = d.keys()
+					if keys and not d.has_key('curr'):
+						d = d.get(keys[0])
 					else:
-						logging.info("return the curr")
 						return d.get('curr')
 				else:
-					logging.info("not a dict, quit")
 					break
 			
-			logging.info("Returned nothing")
 			return None
 		
 		from app.models import StarwoodProperty
@@ -93,7 +84,7 @@ class StarwoodParser(webapp.RequestHandler):
 				availability_data = json.loads(response.content).get('data')
 				
 				#currency_code = availability_data.get('currencyCode')
-				currency_code = get_currency_code(availability_data)
+				currency_code = get_currency_code(availability_data.get('availDates'))
 				logging.error("%s" % currency_code)
 			
 				available_dates = availability_data.get('availDates')
