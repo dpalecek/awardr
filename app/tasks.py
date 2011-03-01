@@ -1,15 +1,11 @@
+import time, re
 from datetime import date, datetime
-import time
-import re
 
-from google.appengine.api.labs import taskqueue
-from google.appengine.ext import db
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
-from google.appengine.api import urlfetch
+from google.appengine.api import taskqueue, urlfetch
 from google.appengine.api.urlfetch import DownloadError
-from google.appengine.api.labs import taskqueue
-from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
+from google.appengine.api.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
+from google.appengine.ext import db, webapp
+from google.appengine.ext.webapp.util import run_wsgi_app
 
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode, StarwoodSetCodeRate
