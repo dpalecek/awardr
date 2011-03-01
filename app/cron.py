@@ -15,6 +15,7 @@ from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, Tombston
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCodeCounter, StarwoodSetCode
 import app.helper as helper
+import app.helper_starwood as helper_starwood
 
 from lib.BeautifulSoup import BeautifulSoup
 from lib.dateutil.relativedelta import relativedelta
@@ -322,6 +323,10 @@ class CronSetCodeLookup(webapp.RequestHandler):
 		StarwoodSetCodeCounter.increment(increment)
 
 
+
+"""
+Cron job that kicks off a SET Code Rate lookup.
+"""
 class CronSetCodeRateLookupStarter(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
@@ -336,32 +341,37 @@ class CronSetCodeRateLookupStarter(webapp.RequestHandler):
 		nights = int(self.request.get('nights', default_value=1))
 		check_out = check_in + relativedelta(days=nights)
 		
+		session_cookie = helper_starwood.get_session_cookie()
+		
 		setcode_count = len(db.Query(StarwoodSetCode, keys_only=True).filter('chainwide_rate =', False).filter('chainwide_discount =', False).fetch(10000))
 		self.response.out.write("StarwoodSetCode count: %d\n\n" % setcode_count)
 		
-		for i, offset in enumerate(xrange(0, setcode_count, limit)):
-			task_name = "setcoderate-block-%d-%s-%s-%d-%d-%d" \
-							% (hotel_id, \
-								''.join(helper.date_to_str(check_in).split('-')), \
-								''.join(helper.date_to_str(check_out).split('-')), \
-								offset, offset + limit, int(time.time()))
+		
+		if True:
+			for i, offset in enumerate(xrange(0, setcode_count, limit)):
+				task_name = "setcoderate-block-%d-%s-%s-%d-%d-%d" \
+								% (hotel_id, \
+									''.join(helper.date_to_str(check_in).split('-')), \
+									''.join(helper.date_to_str(check_out).split('-')), \
+									offset, offset + limit, int(time.time()))
 												
-			task = taskqueue.Task(url='/tasks/%s' % queue_name, \
-									name=task_name, method='GET', \
-									params={'hotel_id': hotel_id, \
-											'check_in': check_in, \
-											'check_out': check_out,
-											'offset': offset,
-											'limit': limit})
+				task = taskqueue.Task(url='/tasks/%s' % queue_name, \
+										name=task_name, method='GET', \
+										params={'hotel_id': hotel_id, \
+												'check_in': check_in, \
+												'check_out': check_out, \
+												'offset': offset, \
+												'limit': limit, \
+												'session_cookie': json.dumps(session_cookie)})
 
-			d = (i + 1, task.name, queue_name)
-			try:
-				task.add(queue_name)
-				self.response.out.write("%d.\tAdded task '%s' to task queue '%s'.\n" % d)
-			except TaskAlreadyExistsError:
-				self.response.out.write("%d.\tTask '%s' already exists in task queue '%s'.\n" % d)
-			except TombstonedTaskError:
-				self.response.out.write("%d.\tTask '%s' is tombstoned in task queue '%s'.\n" % d)
+				d = (i + 1, task.name, queue_name)
+				try:
+					task.add(queue_name)
+					self.response.out.write("%d.\tAdded task '%s' to task queue '%s'.\n" % d)
+				except TaskAlreadyExistsError:
+					self.response.out.write("%d.\tTask '%s' already exists in task queue '%s'.\n" % d)
+				except TombstonedTaskError:
+					self.response.out.write("%d.\tTask '%s' is tombstoned in task queue '%s'.\n" % d)
 
 
 def main():
