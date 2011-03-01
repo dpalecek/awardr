@@ -203,7 +203,7 @@ class StarwoodPropertiesView(webapp.RequestHandler):
 
 class RateLookupView(webapp.RequestHandler):
 	def get(self):
-		if not all((arg in self.request.arguments()) for arg in ('hotel_id', 'ratecode', 'date')):
+		if not all((arg in self.request.arguments()) for arg in ['hotel_id', 'ratecode', 'date']):
 			template_values = { \
 				'date': helper.date_to_str(datetime.date.today() + relativedelta(months=1))}
 			
@@ -270,8 +270,6 @@ class RateLookupView(webapp.RequestHandler):
 						template_values['cash'] = night.get('rate')
 						template_values['points'] = night.get('points') or night.get('pts')
 				
-						logging.info("\n\n\n%s\n\n\n" % template_values)
-				
 						ratecode_key_name = StarwoodRatecode.calc_key_name(ratecode)
 						ratecode_entity = StarwoodRatecode.get_by_key_name(ratecode_key_name)
 						if not ratecode_entity:
@@ -285,7 +283,6 @@ class RateLookupView(webapp.RequestHandler):
 																	ratecode=ratecode_entity, date=helper.str_to_date(date))
 				
 						if template_values['cash'] or template_values['points']:
-							logging.info("%s" % template_values)
 							if template_values['cash']:
 								rate_lookup_entity.cash = float(template_values['cash'])
 							if template_values['points']:
