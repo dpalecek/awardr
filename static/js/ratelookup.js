@@ -11,11 +11,15 @@ $(function() {
 
 			return false;
 		}
-	})
-	.data("autocomplete")._renderItem = function(ul, item) {
-		var result_link = $("<a/>").append(
-							"<span class=\"bold\">" + item.label + "</span>"
-							+ "<br />" + item.desc);
+	}).data("autocomplete")._renderItem = function(ul, item) {
+		var result_link = $("<a />"
+			).append(
+				$("<span />").attr("class", "bold").text(item.label)
+			).append(
+				$("<br />")
+			).append(
+				item.desc
+			);
 		return $("<li/>")
 			.data("item.autocomplete", item)
 			.append(result_link)
