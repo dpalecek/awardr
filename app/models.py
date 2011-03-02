@@ -1,12 +1,21 @@
 from __future__ import division
 
-import urllib
-import random
-import datetime
+import urllib, random, datetime
+
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+	from django.template.defaultfilters import slugify
+except:
+	logging.error("Couldn't load Django 1.2")
+	from app.helper import slugify
+
 
 from google.appengine.ext import db
-from google.appengine.api import memcache
-from google.appengine.api import urlfetch
+from google.appengine.api import memcache, urlfetch
 
 from app.parsers import StarwoodParser
 import app.helper as helper
@@ -17,9 +26,6 @@ except ImportError: import simplejson as json
 
 from lib.geomodel import geomodel
 from lib.dateutil.relativedelta import relativedelta
-
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 
