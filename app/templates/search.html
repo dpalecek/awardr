@@ -2,9 +2,13 @@
 
 {% block head_title %}awardpad - search results for "{{ where }}"{% endblock %}
 
-{% block head_extended %}
+{% block css_extended %}
 		<link rel="stylesheet" type="text/css" href="/static2/css/search.css" />
+{% endblock %}
 
+{% block google_loader_callback %}googleLoadedCallback{% endblock %}
+
+{% block js_extended %}
 		<script>
 			{% if user_location %}
 			var user_coord = {'lat': {{ user_location.lat }}, 'lng': {{ user_location.lon }}};
@@ -13,7 +17,7 @@
 			{% endif %}
 			
 			{% if nearest_hotels_json %}
-			var nearest_hotels = {{ nearest_hotels_json }};
+			var nearest_hotels = {{ nearest_hotels_json|safe }};
 			{% else %}
 			var nearest_hotels = [];
 			{% endif %}
@@ -107,7 +111,7 @@
 											<a href="#">{{ hotel_data.0.name }}</a>
 										</h3>
 										
-										{{ hotel_data.0.html_short_address }} -
+										{{ hotel_data.0.html_short_address|safe }} -
 										<span class="category">Category {{ hotel_data.0.category }}</span>
 									</div>
 									
@@ -212,7 +216,7 @@
 											{% endcomment %}
 										</h3>
 										
-										{{ hotel.html_short_address }} -
+										{{ hotel.html_short_address|safe }} -
 										<span class="category">Category {{ hotel.category }}</span>
 									</div>
 								
