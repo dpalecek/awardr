@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(function() {
 	var ratelookup_form = $("form#form_ratecode");
 	
 	var hotel_field = $("input#field_hotel", ratelookup_form);
