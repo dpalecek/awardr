@@ -2,8 +2,11 @@
 
 {% block head_title %}awardpad - Starwood rate lookup tool{% endblock %}
 
-{% block head_extended %}
+{% block css_extended %}
 		<link rel="stylesheet" type="text/css" href="/static2/css/hotel_detail.css" />
+{% endblock %}
+
+{% block js_extended %}
 		<script>
 			YUI.awardpad.hotel_coord = {'lat': {{ hotel.location.lat }}, 'lng': {{ hotel.location.lon }}};
 		</script>

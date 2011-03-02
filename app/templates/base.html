@@ -14,27 +14,11 @@
 		<link rel="stylesheet" type="text/css" href="/static2/css/fancybutton.css" />
 		<link rel="stylesheet" type="text/css" href="/static2/css/footer.css" />
 		
-		<script src="http://yui.yahooapis.com/combo?3.3.0/build/yui/yui-min.js"></script>
-		<script src="/static2/js/global.js"></script>
-		
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
-		{% comment %}
-		<script src="/static2/libs/jquery.lint.js"></script>
-		{% endcomment %}
-
-		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
 		<link rel="stylesheet" type="text/css"
 			href="/static2/libs/jquery-ui-1.8.10/css/redmond/jquery-ui-1.8.10.custom.css" />
-
-		{% block head_extended %}
+		
+		{% block css_extended %}
 		{% endblock %}
-		
-		<script src="/static2/js/analytics.js"></script>
-		
-		{% if uses_google_maps %}
-		<script src="https://www.google.com/jsapi?key=ABQIAAAAbS93tJ_uidHDZWvF7euCFBSJPhMcII7lp6bcofyoVW48E9dl1xTpP3PFKtaxfFOp-v9-N8j7FZ-9Tw"></script>
-		<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
-		{% endif %}
 	</head>
 	<body>
 		<div id="top_wrapper_wrapper">
@@ -90,5 +74,24 @@
 				</div>
 			</div>
 		</div>
+		
+		
+		<!-- Scripts at the bottom -->		
+		<script src="http://yui.yahooapis.com/combo?3.3.0/build/yui/yui-min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+		
+		<script src="/static2/js/global.js"></script>
+		
+		{% block js_extended %}
+		{% endblock %}
+		
+		<!-- key=ABQIAAAAbS93tJ_uidHDZWvF7euCFBSJPhMcII7lp6bcofyoVW48E9dl1xTpP3PFKtaxfFOp-v9-N8j7FZ-9Tw&amp; -->
+		<!--
+		<script src="http://www.google.com/jsapi?callback={% block google_loader_callback %}{% endblock %}"></script>
+		-->
+		
+		<script src="/static2/js/analytics.js"></script>
+		
 	</body>
 </html>
