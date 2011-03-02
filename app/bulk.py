@@ -1,5 +1,13 @@
-from google.appengine.ext import db
-from google.appengine.ext import webapp
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
+
+from google.appengine.ext import db, webapp
 from google.appengine.api import urlfetch
 from google.appengine.ext.webapp.util import run_wsgi_app
 

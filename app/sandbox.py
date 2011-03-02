@@ -1,27 +1,25 @@
-import re
-import os
-import random
-import datetime
-import wsgiref.handlers
-import StringIO
-import urllib
-import urllib2
-import csv
-import cookielib
+import re, os, random, datetime, wsgiref.handlers, StringIO, urllib, urllib2, csv, cookielib
 
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
 
 from collections import defaultdict
 
-from google.appengine.ext import db
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
-from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 from google.appengine.api.urlfetch import DownloadError
+from google.appengine.ext import db, webapp
+from google.appengine.ext.webapp import template
+from google.appengine.ext.webapp.util import run_wsgi_app
 
 from app import helper
-from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode, StarwoodSetCodeRate
 from app import resources
+from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCode, StarwoodSetCodeRate
 
 try: import json
 except ImportError: import simplejson as json
@@ -31,8 +29,6 @@ from lib.geomodel import geomodel
 from lib.dateutil.relativedelta import relativedelta
 from lib import mechanize
 
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 		
 
 class RemoveDuplicateHotelAvailabilities(webapp.RequestHandler):

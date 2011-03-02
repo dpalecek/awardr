@@ -1,6 +1,15 @@
 import time, re
 from datetime import date, datetime
 
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
+
 from google.appengine.api import taskqueue, urlfetch
 from google.appengine.api.urlfetch import DownloadError
 from google.appengine.api.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
@@ -18,8 +27,6 @@ from lib.dateutil.relativedelta import relativedelta
 try: import json
 except ImportError: import simplejson as json
 
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 TASK_QUEUE_PROCESS_AVAILABILITY = "process-starwood-availability"

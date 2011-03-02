@@ -1,18 +1,23 @@
-import re
-import os
-import unicodedata
-import random
+import re, os, unicodedata, random
 from datetime import date, datetime
-
-from google.appengine.api import users
-from google.appengine.api import urlfetch
-
-try: import json
-except ImportError: import simplejson as json
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
+
+from google.appengine.api import users, urlfetch
+
+try: import json
+except ImportError: import simplejson as json
+
+
+def is_prod():
+	return not os.environ['SERVER_SOFTWARE'].startswith('Dev')
 
 def init_template_values(init_dict={}, user=None, uses_google_maps=False):
 	t = {'uses_google_maps': uses_google_maps}

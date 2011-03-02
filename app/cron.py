@@ -1,16 +1,22 @@
-import datetime
-import time
-import random
+import datetime, time, random
 from collections import defaultdict
 
-from google.appengine.ext import db
-from google.appengine.ext import webapp
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
+
+
+
 from google.appengine.api import users
+from google.appengine.api import urlfetch, mail, taskqueue
+from google.appengine.api.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
+from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
-from google.appengine.api import urlfetch
-from google.appengine.api import mail
-from google.appengine.api.labs import taskqueue
-from google.appengine.api.labs.taskqueue import TaskAlreadyExistsError, TombstonedTaskError
 
 from app.parsers import StarwoodParser
 from app.models import StarwoodProperty, StarwoodDateAvailability, StarwoodSetCodeCounter, StarwoodSetCode
@@ -23,8 +29,6 @@ from lib.dateutil.relativedelta import relativedelta
 try: import json
 except ImportError: import simplejson as json
 
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 TASK_QUEUE_PROCESS_HOTEL = "starwood-properties"

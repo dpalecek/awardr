@@ -1,5 +1,14 @@
 import os, datetime, wsgiref.handlers
 
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
+from google.appengine.dist import use_library
+try:
+	use_library('django', '1.2')
+except:
+	logging.error("Couldn't load Django 1.2")
+
 from google.appengine.api import users, urlfetch
 from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp import template
@@ -13,10 +22,9 @@ except ImportError: import simplejson as json
 
 from lib.BeautifulSoup import BeautifulSoup as BeautifulSoup
 
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 starwood_url = 'https://www.starwoodhotels.com/preferredguest/search/ratelist.html'
+
 
 class StarwoodParser(webapp.RequestHandler):
 	@staticmethod
