@@ -1,1 +1,1 @@
-var all_hotels = {{ hotels }};
+var all_hotels = {{ hotels|safe }};
