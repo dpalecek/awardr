@@ -25,6 +25,7 @@ except ImportError: import simplejson as json
 from lib.geomodel import geomodel
 from lib.dateutil.relativedelta import relativedelta
 
+IS_PROD = helper.is_prod()
 
 
 template.register_template_library('app.filters')
@@ -33,7 +34,7 @@ template.register_template_library('app.filters')
 MILES_TO_METERS = 1609.344 # miles to meters
 MAX_HOTELS_RESULTS = 30
 MAX_HOTELS_DISTANCE = 70 * MILES_TO_METERS
-MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",)
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",]
 
 
 def geocoder_service(address):
@@ -377,7 +378,7 @@ def main():
 		('/starwood', StarwoodPropertiesView),
 		('/', LandingView),
 	]
-	application = webapp.WSGIApplication(ROUTES, debug=True)
+	application = webapp.WSGIApplication(ROUTES, debug=(not IS_PROD))
 	run_wsgi_app(application)
 
 
