@@ -2,25 +2,41 @@ queue:
 - name: starwood-properties
   rate: 20/s
   bucket_size: 20
+  retry_parameters:
+    min_backoff_seconds: 60
   
 - name: fetch-starwood-availability
   rate: 20/s
   bucket_size: 20
+  retry_parameters:
+    min_backoff_seconds: 60
   
 - name: process-starwood-availability
   rate: 20/s
   bucket_size: 20
+  retry_parameters:
+    min_backoff_seconds: 60
   
 - name: setcode-lookup
   rate: 20/s
   bucket_size: 20
+  retry_parameters:
+    min_backoff_seconds: 60
   
 - name: setcoderate-lookup
   rate: 20/s
   bucket_size: 20
+  retry_parameters:
+    min_backoff_seconds: 60
 
 - name: setcoderateblock-lookup
   rate: 20/s
   bucket_size: 20
+  retry_parameters:
+    min_backoff_seconds: 60
 
-
+- name: refresh-hotel
+  rate: 5/s
+  bucket_size: 20
+  retry_parameters:
+    min_backoff_seconds: 60
