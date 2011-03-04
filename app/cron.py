@@ -212,35 +212,41 @@ class CronExpireAvailability(webapp.RequestHandler):
 			self.response.out.write("\t%s\n" % p)
 
 		db.delete(past_dates)
-		
-		
-		
+
+
+
 class CronRefreshHotelInfo(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
 		
+		queue_name = "refresh-hotel"
+
+		hotels = StarwoodProperty.all().fetch(10000)
+		limit = 100
+		hour = int(self.request.get('hour', datetime.datetime.now().hour))
+		
+		offset = min(hour, len(hotels)/limit)
 		try:
-			hotel_id = int(self.request.get('hotel_id'))
+			hotel_ids = [int(self.request.get('hotel_id'))]
 		except:
-			hotel_id = None
-		
-		hotels = StarwoodProperty.all()
-		if hotel_id:
-			hotel = hotels.filter('id =', hotel_id).get()
-		else:
-			hotel = hotels.filter('currency =', None).get()
-		
-		if hotel:
-			info = StarwoodParser.parse(hotel.id)
-			'''
-			for d in ['category', 'image_url', ]
-			category = info.get('category')
-			if category:
-				hotel.category = category
-			phone = info.get('phone')
-			'''
+			hotel_ids = xrange(offset * limit, (offset + 1) * limit)
 			
-		self.response.out.write('%s' % parsed)
+		for hotel_id in hotel_ids:
+			task_name = "hotel-refresh-%d-%d" % (hotel_id, int(time.time()))
+			task = taskqueue.Task(url='/tasks/refresh-hotel', \
+									name=task_name, method='GET', \
+									params={'hotel_id': hotel_id})
+									
+			try:
+				task.add(queue_name)
+				self.response.out.write("Added task '%s' to task queue '%s'.\n" \
+										% (task.name, queue_name))
+			except TaskAlreadyExistsError:
+				self.response.out.write("Task '%s' already exists in task queue '%s'.\n" \
+										% (task.name, queue_name))
+			except TombstonedTaskError:
+				self.response.out.write("Task '%s' is tombstoned in task queue '%s'.\n" \
+										% (task.name, queue_name))
 
 
 
