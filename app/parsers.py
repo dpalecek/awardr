@@ -176,8 +176,9 @@ class StarwoodParser(webapp.RequestHandler):
 		valid_property = False
 		hotel_props = {'id': property_id}
 		
-		starwood_response = urlfetch.fetch(url='%s?propertyID=%s' % (starwood_url, property_id),
-											deadline=10)
+		property_url = "%s?propertyID=%s" % (starwood_url, property_id)
+		logging.debug("Property URL: %s" % property_url)
+		starwood_response = urlfetch.fetch(url=property_url, deadline=10)
 		if starwood_response:
 			try:
 				soup = BeautifulSoup(starwood_response.content).find(attrs={'id': 'propertyHighlight'}).find(attrs={'class': 'propertyContainer'})
