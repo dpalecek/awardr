@@ -252,10 +252,12 @@ transformers:
 
     - property: location
       external_name: location
+      import_transform: transform.none_if_empty(db.GeoPt)
       # Type: GeoPt Stats: 1054 properties of this type in this kind.
 
     - property: location_geocells
       external_name: location_geocells
+      import_transform: "lambda x: len(x) > 0 and eval(x) or '[]'"
       # Type: String Stats: 13702 properties of this type in this kind.
 
     - property: name
