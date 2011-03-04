@@ -195,7 +195,7 @@ class ProcessStarwoodAvailability(webapp.RequestHandler):
 			self.response.out.write("Invalid request.")
 			
 		
-
+# Task to create a new Starwood hotel property.
 class StarwoodPropertyProcesser(webapp.RequestHandler):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
@@ -221,6 +221,72 @@ class StarwoodPropertyProcesser(webapp.RequestHandler):
 				self.response.out.write("Did not find prop id %d." % (prop_id))
 
 
+
+
+def flattened_parsed_props(props):
+	if props:
+		transform = {'zipCode': 'postal_code', 'address1': 'address'}
+		address_props = props['address']
+		del props['address']
+	
+		for before_key, after_key in transform.iteritems():
+			if before_key in address_props:
+				address_props[after_key] = address_props.get(before_key)
+				del address_props[before_key]
+	
+		props.update(address_props)
+	
+	return props
+
+
+MUTABLE_PROPS = ['name', 'category', 'address', 'address2', 'city', 'state', \
+					'postal_code', 'country', 'phone', 'fax']
+def find_diff_props(old_props, new_props):
+	diff_props = {}
+	for prop in MUTABLE_PROPS:
+		old_val = old_props.get(prop)
+		new_val = new_props.get(prop)
+	
+		if old_val and new_val and not (old_val == new_val):
+			diff_props[prop] = new_val
+			
+	return diff_props
+
+
+class RefreshHotelInfoTask(webapp.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		try:
+			hotel_id = int(self.request.get('hotel_id'))
+		except:
+			hotel_id = None
+
+		if hotel_id:
+			hotel = StarwoodProperty.get_by_id(hotel_id)
+			if hotel:
+				current_hotel_props = hotel.props()
+				new_hotel_props = flattened_parsed_props(StarwoodParser.parse(hotel_id))
+				
+				logging.info("\n\n\nnew hotel props: %s\n\n" % new_hotel_props)
+				
+				if not new_hotel_props:
+					self.response.out.write("Did not get new props.")
+				
+				else:
+					diff_props = find_diff_props(current_hotel_props, new_hotel_props)
+					
+					if diff_props:
+						for prop, val in diff_props.iteritems():
+							setattr(hotel, prop, prop is 'id' and int(val) or val)
+						hotel.put()
+						
+						changes = [(prop, current_hotel_props.get(prop), new_val) for prop, new_val in diff_props.iteritems()]
+						logging.warning("\n\nDuring hotel refresh, updated props: %s\n\n" % changes)
+						self.response.out.write("\nUpdated props: %s" % changes)
+					
+					else:
+						logging.info("During hotel refresh did not find any props to update.")
+		
 
 class SetCodeLookupTask(webapp.RequestHandler):
 	def get(self):
@@ -500,6 +566,7 @@ class SetCodeRateLookupTask(webapp.RequestHandler):
 
 def main():
 	ROUTES = [
+		('/tasks/refresh-hotel', RefreshHotelInfoTask),
 		('/tasks/setcoderateblock-lookup', SetCodeRateBlockLookupTask),
 		('/tasks/setcoderate-lookup', SetCodeRateLookupTask),
 		('/tasks/setcode', SetCodeLookupTask),
