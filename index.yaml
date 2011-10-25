@@ -6,6 +6,12 @@ indexes:
   - name: __key__
     direction: desc
     
+- kind: StarwoodSetCode
+  ancestor: no
+  properties:
+  - name: __key__
+    direction: desc
+    
 - kind: __Stat_PropertyType_PropertyName_Kind__
   ancestor: no
   properties:
@@ -73,3 +79,9 @@ indexes:
   properties:
   - name: check_out
   - name: room_rate
+  
+- kind: StarwoodSetCodeRate
+  ancestor: no
+  properties:
+  - name: __key__
+    direction: desc
