@@ -1,26 +1,21 @@
 cron:
 - description: geocode hotels
   url: /cron/geocode
-  schedule: every 30 minutes
-
+  schedule: every 24 hours
 
 
 - description: fetch and process hotel availability
   url: /cron/availability
-  schedule: every 60 minutes
-  
+  schedule: every 24 hours
+
 - description: expire past hotel availability
   url: /cron/expire
-  schedule: every 5 minutes
-  
-  
-  
+  schedule: every 24 hours
+
 - description: lookup SET codes
   url: /cron/setcode-lookup?hotel_id=1234&increment=100
-  schedule: every 30 minutes
-  
-  
-  
+  schedule: every 24 hours
+
 - description: fetch new Category 1 properties from Starwood directory
   url: /cron/directory/1
   schedule: every 24 hours
@@ -32,7 +27,7 @@ cron:
 - description: fetch new Category 3 properties from Starwood directory
   url: /cron/directory/3
   schedule: every 24 hours
-  
+
 - description: fetch new Category 4 properties from Starwood directory
   url: /cron/directory/4
   schedule: every 24 hours
